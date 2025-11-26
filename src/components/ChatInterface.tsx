@@ -174,7 +174,7 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
     setMessages((prev) => [...prev, systemMessage]);
   };
 
-  const handleRequestPhoto = () => {
+  const handleRequestPhoto = async () => {
     if (currentLevel < 2) {
       setShowNSFWWarning(true);
       return;
@@ -201,13 +201,26 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
 
     setMessages((prev) => [...prev, loadingMessage]);
 
-    const mockPhotos = [
-      girl.image,
-      'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/6147b4a2-6c60-4638-a5f4-29e331a21609.jpg',
-      'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/9397c83f-dbf6-4071-8280-46c17107c166.jpg',
-    ];
+    try {
+      const response = await fetch('https://functions.poehali.dev/ab4b3a02-f1dd-4e8a-a893-10ab668f51e7', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': 'user-' + Date.now(),
+        },
+        body: JSON.stringify({
+          girl_name: girl.name,
+          persona: currentPersona,
+          level: currentLevel,
+        }),
+      });
 
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate photo');
+      }
+
       setIsGeneratingImage(false);
       setMessages((prev) => 
         prev.map((msg) => 
@@ -217,13 +230,35 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
                 text: currentPersona === 'gentle'
                   ? 'Специально для тебя... Надеюсь, тебе понравится 💕'
                   : 'Вот, смотри... Это только начало 🔥',
-                image: mockPhotos[imageRequests % mockPhotos.length],
+                image: data.image_url,
                 imageLoading: false,
               }
             : msg
         )
       );
-    }, 3000 + Math.random() * 2000);
+    } catch (error) {
+      console.error('Photo generation error:', error);
+      
+      const fallbackPhotos = [
+        girl.image,
+        'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/6147b4a2-6c60-4638-a5f4-29e331a21609.jpg',
+        'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/9397c83f-dbf6-4071-8280-46c17107c166.jpg',
+      ];
+
+      setIsGeneratingImage(false);
+      setMessages((prev) => 
+        prev.map((msg) => 
+          msg.imageLoading
+            ? {
+                ...msg,
+                text: 'Вот моё фото для тебя 💕',
+                image: fallbackPhotos[imageRequests % fallbackPhotos.length],
+                imageLoading: false,
+              }
+            : msg
+        )
+      );
+    }
   };
 
   const handleSendMessage = () => {
