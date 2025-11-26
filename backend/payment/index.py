@@ -9,6 +9,7 @@ import json
 import os
 import uuid
 import base64
+import psycopg2
 from typing import Dict, Any
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -46,6 +47,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     user_id = body_data.get('user_id', 'anonymous')
     girl_id = body_data.get('girl_id')
     
+    db_url = os.environ.get('DATABASE_URL')
+    conn = None
+    
+    try:
+        if db_url:
+            conn = psycopg2.connect(db_url)
+            cur = conn.cursor()
+            
+            cur.execute(
+                "INSERT INTO t_p77610913_ai_dating_bot.users (user_id) VALUES (%s) ON CONFLICT (user_id) DO UPDATE SET last_active = CURRENT_TIMESTAMP",
+                (user_id,)
+            )
+            conn.commit()
+            cur.close()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        pass
+    
     if not plan_type or not amount:
         return {
             'statusCode': 400,
@@ -60,7 +80,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     shop_id = os.environ.get('YOOKASSA_SHOP_ID')
     secret_key = os.environ.get('YOOKASSA_SECRET_KEY')
     
+    payment_id = str(uuid.uuid4())
+    
+    if db_url and conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO t_p77610913_ai_dating_bot.payments (user_id, payment_id, plan_type, amount, status, payment_url) VALUES (%s, %s, %s, %s, %s, %s)",
+                (user_id, payment_id, plan_type, float(amount), 'pending', 'demo' if not shop_id else 'processing')
+            )
+            conn.commit()
+            cur.close()
+        except Exception as e:
+            if conn:
+                conn.rollback()
+    
     if not shop_id or not secret_key:
+        if conn:
+            conn.close()
         return {
             'statusCode': 200,
             'headers': {
@@ -69,7 +106,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'payment_url': 'https://demo.yookassa.ru/test-payment',
-                'payment_id': str(uuid.uuid4()),
+                'payment_id': payment_id,
                 'status': 'pending',
                 'demo_mode': True
             }),
@@ -127,7 +164,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             response_data = json.loads(response.read().decode('utf-8'))
             
             confirmation_url = response_data.get('confirmation', {}).get('confirmation_url')
-            payment_id = response_data.get('id')
+            yookassa_payment_id = response_data.get('id')
+            
+            if db_url and conn:
+                try:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "UPDATE t_p77610913_ai_dating_bot.payments SET payment_id = %s, payment_url = %s, status = %s, updated_at = CURRENT_TIMESTAMP WHERE payment_id = %s",
+                        (yookassa_payment_id, confirmation_url, response_data.get('status'), payment_id)
+                    )
+                    conn.commit()
+                    cur.close()
+                except Exception:
+                    if conn:
+                        conn.rollback()
+            
+            if conn:
+                conn.close()
             
             return {
                 'statusCode': 200,
@@ -137,13 +190,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 },
                 'body': json.dumps({
                     'payment_url': confirmation_url,
-                    'payment_id': payment_id,
+                    'payment_id': yookassa_payment_id,
                     'status': response_data.get('status')
                 }),
                 'isBase64Encoded': False
             }
     except HTTPError as e:
         error_body = e.read().decode('utf-8')
+        if conn:
+            conn.close()
         return {
             'statusCode': e.code,
             'headers': {

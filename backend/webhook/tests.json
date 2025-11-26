@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "Handle payment succeeded webhook",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "event": "payment.succeeded",
+        "object": {
+          "id": "test_payment_123",
+          "status": "succeeded",
+          "metadata": {
+            "user_id": "test_user",
+            "plan_type": "flirt"
+          }
+        }
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "status": "ok"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing payment data",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "event": "payment.succeeded"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "Missing payment data"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

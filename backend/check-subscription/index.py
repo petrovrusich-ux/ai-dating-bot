@@ -7,6 +7,7 @@ Returns: User subscription info with active plans and expiry dates
 
 import json
 import os
+import psycopg2
 from typing import Dict, Any
 from datetime import datetime, timedelta
 
@@ -59,6 +60,53 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         'purchased_girls': [],
         'has_all_girls': False
     }
+    
+    db_url = os.environ.get('DATABASE_URL')
+    if not db_url:
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps(result),
+            'isBase64Encoded': False
+        }
+    
+    try:
+        conn = psycopg2.connect(db_url)
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT subscription_type, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE AND end_date > CURRENT_TIMESTAMP ORDER BY end_date DESC LIMIT 1",
+            (user_id,)
+        )
+        subscription = cur.fetchone()
+        
+        if subscription:
+            result['has_subscription'] = True
+            result['subscription_type'] = subscription[0]
+            result['subscription_end'] = subscription[1].isoformat()
+        
+        cur.execute(
+            "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s",
+            (user_id,)
+        )
+        purchases = cur.fetchall()
+        
+        for purchase in purchases:
+            purchase_type, girl_id = purchase
+            if purchase_type == 'all_girls':
+                result['has_all_girls'] = True
+            elif purchase_type == 'one_girl' and girl_id:
+                if girl_id not in result['purchased_girls']:
+                    result['purchased_girls'].append(girl_id)
+        
+        cur.close()
+        conn.close()
+        
+    except Exception as e:
+        pass
     
     return {
         'statusCode': 200,

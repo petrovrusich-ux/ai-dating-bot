@@ -1,4 +1,5 @@
 {
+  "webhook": "https://functions.poehali.dev/9deef060-1512-4cdf-abca-83718c26834e",
   "check-subscription": "https://functions.poehali.dev/cf396c07-c7d0-4bd3-918b-a3cec4f9930a",
   "payment": "https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0",
   "generate-photo": "https://functions.poehali.dev/ab4b3a02-f1dd-4e8a-a893-10ab668f51e7"
