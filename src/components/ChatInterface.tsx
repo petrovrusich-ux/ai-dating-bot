@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { girlsPhotos } from '@/data/girlsPhotos';
 
 interface Girl {
   id: string;
@@ -186,6 +187,7 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
     }
 
     setIsGeneratingImage(true);
+    const currentRequest = imageRequests;
     setImageRequests((prev) => prev + 1);
 
     const loadingMessage: Message = {
@@ -201,26 +203,33 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
 
     setMessages((prev) => [...prev, loadingMessage]);
 
-    try {
-      const response = await fetch('https://functions.poehali.dev/ab4b3a02-f1dd-4e8a-a893-10ab668f51e7', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': 'user-' + Date.now(),
-        },
-        body: JSON.stringify({
-          girl_name: girl.name,
-          persona: currentPersona,
-          level: currentLevel,
-        }),
-      });
+    const girlPhotoData = girlsPhotos.find((g) => g.id === girl.id);
+    const photoGallery = girlPhotoData?.photos[currentPersona] || [];
+    
+    if (photoGallery.length === 0) {
+      const fallbackPhotos = [girl.image];
+      
+      setTimeout(() => {
+        setIsGeneratingImage(false);
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.imageLoading
+              ? {
+                  ...msg,
+                  text: 'Вот моё фото для тебя 💕',
+                  image: fallbackPhotos[0],
+                  imageLoading: false,
+                }
+              : msg
+          )
+        );
+      }, 2000);
+      return;
+    }
 
-      const data = await response.json();
+    const selectedPhoto = photoGallery[currentRequest % photoGallery.length];
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate photo');
-      }
-
+    setTimeout(() => {
       setIsGeneratingImage(false);
       setMessages((prev) => 
         prev.map((msg) => 
@@ -230,35 +239,13 @@ const ChatInterface = ({ girl, onClose }: ChatInterfaceProps) => {
                 text: currentPersona === 'gentle'
                   ? 'Специально для тебя... Надеюсь, тебе понравится 💕'
                   : 'Вот, смотри... Это только начало 🔥',
-                image: data.image_url,
+                image: selectedPhoto,
                 imageLoading: false,
               }
             : msg
         )
       );
-    } catch (error) {
-      console.error('Photo generation error:', error);
-      
-      const fallbackPhotos = [
-        girl.image,
-        'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/6147b4a2-6c60-4638-a5f4-29e331a21609.jpg',
-        'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/9397c83f-dbf6-4071-8280-46c17107c166.jpg',
-      ];
-
-      setIsGeneratingImage(false);
-      setMessages((prev) => 
-        prev.map((msg) => 
-          msg.imageLoading
-            ? {
-                ...msg,
-                text: 'Вот моё фото для тебя 💕',
-                image: fallbackPhotos[imageRequests % fallbackPhotos.length],
-                imageLoading: false,
-              }
-            : msg
-        )
-      );
-    }
+    }, 1500 + Math.random() * 1500);
   };
 
   const handleSendMessage = () => {
