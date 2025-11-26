@@ -489,6 +489,7 @@ const Index = () => {
           girl={selectedGirl} 
           onClose={handleCloseChat} 
           userSubscription={userSubscription}
+          userId={userId}
         />
       )}
     </div>

@@ -38,6 +38,7 @@ interface ChatInterfaceProps {
     flirt: boolean;
     intimate: boolean;
   };
+  userId: string;
 }
 
 const getLevelInfo = (level: number, messagesCount: number) => {
@@ -121,21 +122,9 @@ const getAIResponse = (
   };
 };
 
-const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false } }: ChatInterfaceProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text:
-        girl.level === 0
-          ? 'Привет! Я рада, что ты решил познакомиться со мной 😊'
-          : girl.level === 1
-          ? 'Привет снова! Я скучала... 💕'
-          : 'Привет, любимый... Я так ждала тебя 🔥',
-      timestamp: new Date(),
-      persona: 'gentle',
-    },
-  ]);
+const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId }: ChatInterfaceProps) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [inputValue, setInputValue] = useState('');
   const [currentPersona, setCurrentPersona] = useState<'gentle' | 'bold'>('gentle');
   const [currentLevel, setCurrentLevel] = useState(girl.level);
@@ -147,6 +136,59 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(
+          `https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67?user_id=${userId}&girl_id=${girl.id}`
+        );
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            sender: msg.sender,
+            text: msg.text,
+            timestamp: new Date(msg.timestamp),
+            isNSFW: msg.isNSFW,
+            persona: msg.persona,
+            image: msg.image,
+          }));
+          setMessages(loadedMessages);
+        } else {
+          const welcomeMessage: Message = {
+            id: '1',
+            sender: 'ai',
+            text:
+              girl.level === 0
+                ? 'Привет! Я рада, что ты решил познакомиться со мной 😊'
+                : girl.level === 1
+                ? 'Привет снова! Я скучала... 💕'
+                : 'Привет, любимый... Я так ждала тебя 🔥',
+            timestamp: new Date(),
+            persona: 'gentle',
+          };
+          setMessages([welcomeMessage]);
+          await saveMessage(welcomeMessage);
+        }
+      } catch (error) {
+        console.error('Error loading history:', error);
+        const welcomeMessage: Message = {
+          id: '1',
+          sender: 'ai',
+          text: 'Привет! Я рада, что ты решил познакомиться со мной 😊',
+          timestamp: new Date(),
+          persona: 'gentle',
+        };
+        setMessages([welcomeMessage]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    loadHistory();
+  }, [userId, girl.id]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -173,6 +215,26 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     }
   }, [currentMessagesCount, currentLevel, girl.unlocked, userSubscription]);
 
+  const saveMessage = async (message: Message) => {
+    try {
+      await fetch('https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          girl_id: girl.id,
+          sender: message.sender,
+          text: message.text,
+          is_nsfw: message.isNSFW || false,
+          persona: message.persona,
+          image_url: message.image,
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
   const addSystemMessage = (text: string) => {
     const systemMessage: Message = {
       id: Date.now().toString(),
@@ -181,6 +243,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, systemMessage]);
+    saveMessage(systemMessage);
   };
 
   const handleRequestPhoto = async () => {
@@ -272,12 +335,14 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    saveMessage(userMessage);
     setInputValue('');
     setCurrentMessagesCount((prev) => prev + 1);
 
     setTimeout(() => {
       const aiResponse = getAIResponse(inputValue, currentLevel, currentPersona, currentMessagesCount);
       setMessages((prev) => [...prev, aiResponse]);
+      saveMessage(aiResponse);
       setCurrentMessagesCount((prev) => prev + 1);
     }, 1000 + Math.random() * 2000);
   };
