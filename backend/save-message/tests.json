@@ -23,7 +23,21 @@
       "path": "/?user_id=test_user_123&girl_id=1",
       "expectedStatus": 200,
       "expectedBody": {
-        "messages": []
+        "messages": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get stats for specific girl",
+      "method": "GET",
+      "path": "/?user_id=test_user_123&girl_id=1&stats=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "stats": {
+          "user_id": "string",
+          "girl_id": "string",
+          "total_messages": "number"
+        }
       },
       "bodyMatcher": "partial"
     }

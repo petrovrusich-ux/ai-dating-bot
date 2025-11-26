@@ -1,8 +1,8 @@
 '''
-Business: Save and retrieve chat messages for history persistence
-Args: event with httpMethod, body for POST (message data), queryStringParameters for GET (user_id, girl_id)
+Business: Save and retrieve chat messages for history persistence, get user statistics
+Args: event with httpMethod, body for POST (message data), queryStringParameters for GET (user_id, girl_id, stats=true for statistics)
       context with request_id attribute
-Returns: Success confirmation on POST, messages array on GET, or error
+Returns: Success confirmation on POST, messages array on GET, statistics when stats=true
 '''
 
 import json
@@ -30,15 +30,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         params = event.get('queryStringParameters', {})
         user_id = params.get('user_id')
         girl_id = params.get('girl_id')
+        get_stats = params.get('stats') == 'true'
         
-        if not user_id or not girl_id:
+        if not user_id:
             return {
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Missing required parameters: user_id, girl_id'}),
+                'body': json.dumps({'error': 'Missing required parameter: user_id'}),
                 'isBase64Encoded': False
             }
         
@@ -58,43 +59,120 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(db_url)
             cur = conn.cursor()
             
-            cur.execute(
-                """
-                SELECT id, sender, text, is_nsfw, persona, image_url, created_at
-                FROM t_p77610913_ai_dating_bot.messages
-                WHERE user_id = %s AND girl_id = %s
-                ORDER BY created_at ASC
-                """,
-                (user_id, girl_id)
-            )
-            
-            rows = cur.fetchall()
-            
-            messages = []
-            for row in rows:
-                message = {
-                    'id': str(row[0]),
-                    'sender': row[1],
-                    'text': row[2],
-                    'isNSFW': row[3],
-                    'persona': row[4],
-                    'image': row[5],
-                    'timestamp': row[6].isoformat() if row[6] else None
+            if get_stats:
+                if girl_id:
+                    cur.execute(
+                        """
+                        SELECT user_id, girl_id, total_messages, relationship_level, last_interaction
+                        FROM t_p77610913_ai_dating_bot.user_girl_stats
+                        WHERE user_id = %s AND girl_id = %s
+                        """,
+                        (user_id, girl_id)
+                    )
+                    
+                    row = cur.fetchone()
+                    
+                    if not row:
+                        result = {
+                            'user_id': user_id,
+                            'girl_id': girl_id,
+                            'total_messages': 0,
+                            'relationship_level': 0,
+                            'last_interaction': None
+                        }
+                    else:
+                        result = {
+                            'user_id': row[0],
+                            'girl_id': row[1],
+                            'total_messages': row[2],
+                            'relationship_level': row[3],
+                            'last_interaction': row[4].isoformat() if row[4] else None
+                        }
+                else:
+                    cur.execute(
+                        """
+                        SELECT user_id, girl_id, total_messages, relationship_level, last_interaction
+                        FROM t_p77610913_ai_dating_bot.user_girl_stats
+                        WHERE user_id = %s
+                        ORDER BY last_interaction DESC
+                        """,
+                        (user_id,)
+                    )
+                    
+                    rows = cur.fetchall()
+                    
+                    result = []
+                    for row in rows:
+                        stat = {
+                            'user_id': row[0],
+                            'girl_id': row[1],
+                            'total_messages': row[2],
+                            'relationship_level': row[3],
+                            'last_interaction': row[4].isoformat() if row[4] else None
+                        }
+                        result.append(stat)
+                
+                cur.close()
+                conn.close()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'stats': result}),
+                    'isBase64Encoded': False
                 }
-                messages.append(message)
-            
-            cur.close()
-            conn.close()
-            
-            return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'messages': messages}),
-                'isBase64Encoded': False
-            }
+            else:
+                if not girl_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({'error': 'Missing required parameter: girl_id'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(
+                    """
+                    SELECT id, sender, text, is_nsfw, persona, image_url, created_at
+                    FROM t_p77610913_ai_dating_bot.messages
+                    WHERE user_id = %s AND girl_id = %s
+                    ORDER BY created_at ASC
+                    """,
+                    (user_id, girl_id)
+                )
+                
+                rows = cur.fetchall()
+                
+                messages = []
+                for row in rows:
+                    message = {
+                        'id': str(row[0]),
+                        'sender': row[1],
+                        'text': row[2],
+                        'isNSFW': row[3],
+                        'persona': row[4],
+                        'image': row[5],
+                        'timestamp': row[6].isoformat() if row[6] else None
+                    }
+                    messages.append(message)
+                
+                cur.close()
+                conn.close()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'messages': messages}),
+                    'isBase64Encoded': False
+                }
             
         except Exception as e:
             return {
@@ -171,6 +249,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         )
         
         message_id = cur.fetchone()[0]
+        
+        cur.execute(
+            """
+            INSERT INTO t_p77610913_ai_dating_bot.user_girl_stats 
+            (user_id, girl_id, total_messages, last_interaction)
+            VALUES (%s, %s, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id, girl_id) 
+            DO UPDATE SET 
+                total_messages = user_girl_stats.total_messages + 1,
+                last_interaction = CURRENT_TIMESTAMP
+            """,
+            (user_id, girl_id)
+        )
         
         conn.commit()
         cur.close()

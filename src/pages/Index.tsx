@@ -93,6 +93,7 @@ const Index = () => {
     intimate: boolean;
   }>({ flirt: false, intimate: false });
   const [userId] = useState('user_' + Date.now());
+  const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -113,6 +114,28 @@ const Index = () => {
     }
   };
 
+  const loadGirlStats = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67?user_id=${userId}&stats=true`
+      );
+      const data = await response.json();
+      
+      if (data.stats && Array.isArray(data.stats)) {
+        const statsMap: Record<string, { total_messages: number; relationship_level: number }> = {};
+        data.stats.forEach((stat: any) => {
+          statsMap[stat.girl_id] = {
+            total_messages: stat.total_messages,
+            relationship_level: stat.relationship_level,
+          };
+        });
+        setGirlStats(statsMap);
+      }
+    } catch (error) {
+      console.error('Stats loading error:', error);
+    }
+  };
+
   const handleOpenChat = async (girl: Girl) => {
     await checkSubscription(userId);
     setSelectedGirl(girl);
@@ -122,6 +145,7 @@ const Index = () => {
   const handleCloseChat = () => {
     setShowChat(false);
     setSelectedGirl(null);
+    loadGirlStats(userId);
   };
 
   const handleSubscribe = async (planType: string, amount: number) => {
@@ -191,7 +215,10 @@ const Index = () => {
           <TabsContent value="gallery" className="animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {mockGirls.map((girl) => {
-                const levelInfo = getLevelInfo(girl.level, girl.messagesCount);
+                const stats = girlStats[girl.id];
+                const displayLevel = stats ? stats.relationship_level : girl.level;
+                const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
+                const levelInfo = getLevelInfo(displayLevel, displayMessagesCount);
                 return (
                   <Card
                     key={girl.id}
@@ -235,6 +262,11 @@ const Index = () => {
                           <span className="text-muted-foreground">{levelInfo.description}</span>
                         </div>
                         <Progress value={levelInfo.progress} className="h-2" />
+                        {stats && stats.total_messages > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            💬 {stats.total_messages} {stats.total_messages === 1 ? 'сообщение' : stats.total_messages < 5 ? 'сообщения' : 'сообщений'}
+                          </div>
+                        )}
                       </div>
                       <Button 
                         className="w-full mt-4" 
