@@ -1,48 +1,19 @@
 {
   "tests": [
     {
-      "name": "Valid card payment for subscription",
+      "name": "Create payment for flirt subscription",
       "method": "POST",
       "path": "/",
       "body": {
-        "productId": "flirt_monthly",
-        "productType": "subscription",
+        "plan_type": "flirt",
         "amount": 490,
-        "paymentMethod": "card",
-        "paymentData": {
-          "cardNumber": "1234 5678 9012 3456",
-          "cardExpiry": "12/25",
-          "cardCvv": "123"
-        }
+        "user_id": "test_user_123"
       },
       "expectedStatus": 200,
       "expectedBody": {
-        "success": true,
-        "transactionId": "string",
-        "productId": "flirt_monthly",
-        "amount": 490,
-        "paymentStatus": "success"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Valid SBP payment for one-time purchase",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "productId": "single_girl_nsfw",
-        "productType": "one-time",
-        "amount": 299,
-        "paymentMethod": "sbp",
-        "paymentData": {
-          "phoneNumber": "+79991234567"
-        }
-      },
-      "expectedStatus": 200,
-      "expectedBody": {
-        "success": true,
-        "productType": "one-time",
-        "amount": 299
+        "payment_url": "string",
+        "payment_id": "string",
+        "status": "string"
       },
       "bodyMatcher": "partial"
     },
@@ -51,30 +22,11 @@
       "method": "POST",
       "path": "/",
       "body": {
-        "productId": "test"
+        "plan_type": "intimate"
       },
       "expectedStatus": 400,
       "expectedBody": {
-        "error": "Missing required fields"
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Invalid card number",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "productId": "test",
-        "productType": "subscription",
-        "amount": 490,
-        "paymentMethod": "card",
-        "paymentData": {
-          "cardNumber": "1234"
-        }
-      },
-      "expectedStatus": 400,
-      "expectedBody": {
-        "error": "Invalid card number"
+        "error": "Missing plan_type or amount"
       },
       "bodyMatcher": "partial"
     }

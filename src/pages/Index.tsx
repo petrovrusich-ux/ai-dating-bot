@@ -87,6 +87,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('gallery');
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
   const [showChat, setShowChat] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const handleOpenChat = (girl: Girl) => {
     setSelectedGirl(girl);
@@ -96,6 +97,37 @@ const Index = () => {
   const handleCloseChat = () => {
     setShowChat(false);
     setSelectedGirl(null);
+  };
+
+  const handleSubscribe = async (planType: string, amount: number) => {
+    setIsProcessingPayment(true);
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan_type: planType,
+          amount: amount,
+          user_id: 'user_' + Date.now(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        alert('Ошибка создания платежа. Попробуйте позже.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   return (
@@ -340,8 +372,13 @@ const Index = () => {
                         <span className="text-sm">Быстрый ответ AI</span>
                       </li>
                     </ul>
-                    <Button className="w-full" size="lg">
-                      Оформить подписку
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => handleSubscribe('flirt', 490)}
+                      disabled={isProcessingPayment}
+                    >
+                      {isProcessingPayment ? 'Обработка...' : 'Оформить подписку'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -377,8 +414,14 @@ const Index = () => {
                         <span className="text-sm">Приоритетная поддержка</span>
                       </li>
                     </ul>
-                    <Button className="w-full" size="lg" variant="secondary">
-                      Оформить подписку
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      variant="secondary"
+                      onClick={() => handleSubscribe('intimate', 990)}
+                      disabled={isProcessingPayment}
+                    >
+                      {isProcessingPayment ? 'Обработка...' : 'Оформить подписку'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -390,7 +433,7 @@ const Index = () => {
                     Разовые покупки
                   </h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-card p-4 rounded-lg">
+                    <div className="bg-card p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSubscribe('one_girl', 299)}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">Одна девушка (NSFW)</span>
                         <Badge>299₽</Badge>
@@ -399,7 +442,7 @@ const Index = () => {
                         Полный доступ к интимному общению с выбранной девушкой
                       </p>
                     </div>
-                    <div className="bg-card p-4 rounded-lg">
+                    <div className="bg-card p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSubscribe('all_girls', 799)}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">Все девушки (NSFW)</span>
                         <Badge>799₽</Badge>
