@@ -2,7 +2,51 @@ import json
 import os
 import time
 import hashlib
-from typing import Dict, Any
+import base64
+import requests
+from typing import Dict, Any, Optional
+
+def generate_with_stability_api(prompt: str, api_key: str) -> Optional[str]:
+    '''Generate image using Stability AI API'''
+    url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
+    
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+    
+    payload = {
+        "text_prompts": [
+            {
+                "text": prompt,
+                "weight": 1
+            },
+            {
+                "text": "blurry, bad quality, distorted, ugly, watermark, text",
+                "weight": -1
+            }
+        ],
+        "cfg_scale": 7,
+        "height": 1024,
+        "width": 1024,
+        "samples": 1,
+        "steps": 30,
+    }
+    
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
+    
+    if response.status_code != 200:
+        raise Exception(f"Stability API error: {response.status_code}")
+    
+    data = response.json()
+    
+    if data.get("artifacts") and len(data["artifacts"]) > 0:
+        image_base64 = data["artifacts"][0].get("base64")
+        if image_base64:
+            return f"data:image/png;base64,{image_base64}"
+    
+    return None
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -59,14 +103,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     prompts = {
         'gentle': [
-            f"beautiful woman {girl_name}, elegant pose, soft romantic lighting, intimate atmosphere, photorealistic portrait, high quality, artistic photography",
-            f"attractive {girl_name}, gentle smile, warm lighting, elegant bedroom interior, professional photography, cinematic",
-            f"stunning woman {girl_name}, sensual pose, soft focus, romantic ambiance, fine art photography"
+            f"beautiful elegant woman portrait, soft romantic lighting, intimate atmosphere, photorealistic, high quality, professional photography, cinematic composition",
+            f"attractive young woman, gentle expression, warm golden hour lighting, elegant bedroom interior, professional portrait photography, cinematic style",
+            f"stunning woman portrait, sensual elegant pose, soft focus background, romantic ambiance, fine art photography, high resolution"
         ],
         'bold': [
-            f"confident woman {girl_name}, bold pose, dramatic lighting, intense gaze, photorealistic, high detail",
-            f"seductive {girl_name}, daring outfit, moody lighting, powerful presence, editorial photography",
-            f"fierce woman {girl_name}, provocative pose, cinematic lighting, high fashion photography"
+            f"confident attractive woman portrait, bold dramatic pose, cinematic lighting, intense expressive gaze, photorealistic, editorial photography",
+            f"seductive woman portrait, daring fashionable outfit, moody studio lighting, powerful presence, high fashion editorial photography",
+            f"fierce beautiful woman, provocative artistic pose, dramatic cinematic lighting, fashion photography, high detail photorealistic"
         ]
     }
     
@@ -81,7 +125,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         'https://cdn.poehali.dev/projects/226da4a1-0bd9-4d20-a164-66ae692a6341/files/b91a1828-cdb5-457c-a11a-f629175d21b9.jpg'
     ]
     
-    generated_url = placeholder_images[seed_hash % len(placeholder_images)]
+    api_key = os.environ.get('STABILITY_API_KEY')
+    generated_url = None
+    generation_method = 'placeholder'
+    
+    if api_key:
+        try:
+            start_time = time.time()
+            generated_url = generate_with_stability_api(selected_prompt, api_key)
+            generation_time = time.time() - start_time
+            generation_method = 'stability_ai'
+        except Exception as e:
+            print(f"Stability API error: {e}")
+            generated_url = None
+    
+    if not generated_url:
+        generated_url = placeholder_images[seed_hash % len(placeholder_images)]
+        generation_time = 0.5
     
     return {
         'statusCode': 200,
@@ -93,7 +153,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'success': True,
             'image_url': generated_url,
             'prompt_used': selected_prompt,
-            'generation_time': 3.5,
+            'generation_time': generation_time,
+            'generation_method': generation_method,
             'girl_name': girl_name,
             'persona': persona
         }),
