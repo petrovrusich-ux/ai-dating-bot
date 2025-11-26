@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChatInterface from '@/components/ChatInterface';
 
 interface Girl {
   id: string;
@@ -85,6 +86,17 @@ const getLevelInfo = (level: number, messagesCount: number) => {
 const Index = () => {
   const [activeTab, setActiveTab] = useState('gallery');
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
+  const [showChat, setShowChat] = useState(false);
+
+  const handleOpenChat = (girl: Girl) => {
+    setSelectedGirl(girl);
+    setShowChat(true);
+  };
+
+  const handleCloseChat = () => {
+    setShowChat(false);
+    setSelectedGirl(null);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +139,7 @@ const Index = () => {
                   <Card
                     key={girl.id}
                     className="overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer group"
-                    onClick={() => setSelectedGirl(girl)}
+                    onClick={() => handleOpenChat(girl)}
                   >
                     <div className="relative h-64 overflow-hidden">
                       <img
@@ -167,7 +179,14 @@ const Index = () => {
                         </div>
                         <Progress value={levelInfo.progress} className="h-2" />
                       </div>
-                      <Button className="w-full mt-4" variant={girl.unlocked ? 'default' : 'outline'}>
+                      <Button 
+                        className="w-full mt-4" 
+                        variant={girl.unlocked ? 'default' : 'outline'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenChat(girl);
+                        }}
+                      >
                         {girl.unlocked ? 'Продолжить общение' : 'Начать знакомство'}
                       </Button>
                     </CardContent>
@@ -187,6 +206,7 @@ const Index = () => {
                     <Card
                       key={girl.id}
                       className="overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => handleOpenChat(girl)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
@@ -395,6 +415,10 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {showChat && selectedGirl && (
+        <ChatInterface girl={selectedGirl} onClose={handleCloseChat} />
+      )}
     </div>
   );
 };
