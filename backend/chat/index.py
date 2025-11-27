@@ -1,5 +1,5 @@
 '''
-Business: Generate AI girlfriend responses using OpenAI GPT-4o-mini
+Business: Generate AI girlfriend responses using AITunnel API (OpenAI-compatible)
 Args: event with httpMethod POST, body with girl_id, user_message, conversation_history, persona_prompt
       context with request_id attribute
 Returns: AI-generated response text
@@ -70,15 +70,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    openai_key = os.environ.get('OPENAI_API_KEY')
-    if not openai_key:
+    api_key = os.environ.get('AITUNNEL_API_KEY')
+    if not api_key:
         return {
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'error': 'OpenAI API key not configured'}),
+            'body': json.dumps({'error': 'AITunnel API key not configured'}),
             'isBase64Encoded': False
         }
     
@@ -95,10 +95,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Add current user message
     messages.append({"role": "user", "content": user_message})
     
-    # Call OpenAI API
-    api_url = "https://api.openai.com/v1/chat/completions"
+    # Call AITunnel API (OpenAI-compatible endpoint)
+    api_url = "https://api.aitunnel.ru/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {openai_key}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
@@ -150,6 +150,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'error': f'OpenAI API error: {str(e)}'}),
+            'body': json.dumps({'error': f'AITunnel API error: {str(e)}'}),
             'isBase64Encoded': False
         }
