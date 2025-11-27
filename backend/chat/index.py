@@ -103,7 +103,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     }
     
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": messages,
         "max_tokens": 400,
         "temperature": 0.85,
