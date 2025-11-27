@@ -1,5 +1,5 @@
 '''
-Business: Generate AI girlfriend responses using Dolphin Mistral 24B Venice (uncensored) via HuggingFace
+Business: Generate AI girlfriend responses using Mistral 7B Instruct v0.3 via HuggingFace
 Args: event with httpMethod POST, body with girl_id, user_message, conversation_history, persona_prompt
       context with request_id attribute
 Returns: AI-generated response text
@@ -37,7 +37,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    body_data = json.loads(event.get('body', '{}'))
+    try:
+        body_str = event.get('body', '{}')
+        if isinstance(body_str, dict):
+            body_data = body_str
+        else:
+            body_data = json.loads(body_str) if body_str else {}
+    except json.JSONDecodeError:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': 'Invalid JSON in request body'}),
+            'isBase64Encoded': False
+        }
     
     girl_id = body_data.get('girl_id')
     user_message = body_data.get('user_message')
@@ -80,21 +95,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Add current user message
     messages.append({"role": "user", "content": user_message})
     
-    # Call HuggingFace Inference API
-    api_url = "https://api-inference.huggingface.co/models/cognitivecomputations/Dolphin-Mistral-24B-Venice-Edition"
+    # Call HuggingFace Inference API - Mistral 7B Instruct v0.3
+    api_url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
     headers = {
         "Authorization": f"Bearer {hf_token}",
         "Content-Type": "application/json"
     }
     
     payload = {
-        "inputs": format_messages_for_dolphin(messages),
+        "inputs": format_messages_for_mistral(messages),
         "parameters": {
-            "max_new_tokens": 500,
-            "temperature": 0.8,
+            "max_new_tokens": 350,
+            "temperature": 0.82,
             "top_p": 0.9,
-            "repetition_penalty": 1.1,
-            "do_sample": True
+            "repetition_penalty": 1.12,
+            "do_sample": True,
+            "return_full_text": False
         }
     }
     
@@ -158,14 +174,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
 
-def format_messages_for_dolphin(messages: List[Dict[str, str]]) -> str:
-    """Format messages in ChatML format for Dolphin models"""
+def format_messages_for_mistral(messages: List[Dict[str, str]]) -> str:
+    """Format messages in Mistral Instruct format"""
     formatted = ""
     for msg in messages:
         role = msg['role']
         content = msg['content']
-        formatted += f"<|im_start|>{role}\n{content}<|im_end|>\n"
-    formatted += "<|im_start|>assistant\n"
+        if role == 'system':
+            formatted += f"[INST] System: {content} [/INST]\n"
+        elif role == 'user':
+            formatted += f"[INST] {content} [/INST]\n"
+        elif role == 'assistant':
+            formatted += f"{content}\n"
     return formatted
 
 def extract_assistant_response(generated_text: str, user_message: str) -> str:
