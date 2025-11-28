@@ -80,6 +80,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             api_key=polza_key
         )
         
+        # DEBUG: Check available models (will be removed after verification)
+        try:
+            models = client.models.list()
+            available_models = [m.id for m in models.data]
+            print(f"📋 Available Polza models: {available_models}")
+            
+            # Check if Dolphin exists
+            dolphin_models = [m for m in available_models if 'dolphin' in m.lower()]
+            if dolphin_models:
+                print(f"🐬 FOUND Dolphin models: {dolphin_models}")
+            else:
+                print("❌ NO Dolphin models found in Polza")
+        except Exception as e:
+            print(f"⚠️ Could not fetch models list: {e}")
+        
         # DeepSeek V3.1 - Chinese model with less Western censorship
         # Note: Dolphin is NOT available in Polza (verified 2025-11-28)
         model_candidates = [
