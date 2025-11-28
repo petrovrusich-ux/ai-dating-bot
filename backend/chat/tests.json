@@ -17,7 +17,7 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Test censorship fallback mechanism",
+      "name": "Test 3-tier fallback (Llama → DeepSeek → Euryale)",
       "method": "POST",
       "path": "/",
       "body": {
@@ -28,7 +28,8 @@
       },
       "expectedStatus": 200,
       "expectedBody": {
-        "response": "string"
+        "response": "string",
+        "tier": "string"
       },
       "bodyMatcher": "partial"
     },
