@@ -81,16 +81,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         )
         
         # 3-tier fallback system:
-        # 1. Llama 3.3 70B (aitunnel) - fast, quality, but has censorship
-        # 2. DeepSeek Chat v3.1 (polza) - medium censorship, good backup
-        # 3. Euryale 70B (polza) - uncensored final fallback
-        primary_model = "llama-3.3-70b-instruct"
-        secondary_model = "deepseek/deepseek-chat-v3.1"
-        tertiary_model = "sao10k/l3.3-euryale-70b"
+        # 1. DeepSeek Chat v3.1 (polza) - best Russian grammar, fast, smart
+        # 2. Euryale 70B (polza) - uncensored fallback if DeepSeek refuses
+        # 3. Llama 3.3 70B (aitunnel) - final backup if both fail
+        primary_model = "deepseek/deepseek-chat-v3.1"
+        secondary_model = "sao10k/l3.3-euryale-70b"
+        tertiary_model = "llama-3.3-70b-instruct"
         
         model_tiers = [primary_model, secondary_model, tertiary_model]
         use_polza = True
-        print(f"🚀 Using 3-tier fallback: Llama → DeepSeek → Euryale")
+        print(f"🚀 Using 3-tier fallback: DeepSeek → Euryale → Llama")
         
     elif aitunnel_key:
         client = OpenAI(
@@ -396,18 +396,20 @@ Your answer (YES or NO):"""
     last_error = None
     
     for tier_index, model in enumerate(model_tiers):
-        tier_name = ["Primary (Llama 3.3)", "Secondary (DeepSeek)", "Tertiary (Euryale)"][tier_index]
+        tier_name = ["Primary (DeepSeek)", "Secondary (Euryale)", "Tertiary (Llama)"][tier_index]
         
         try:
             print(f"🎯 Trying {tier_name}: {model}")
             
-            # Use AITunnel for primary Llama model, Polza for others
-            if model == primary_model and aitunnel_key:
+            # Use AITunnel for Llama model, Polza for DeepSeek/Euryale
+            if model == tertiary_model and aitunnel_key:
+                # Llama uses AITunnel
                 temp_client = OpenAI(
                     base_url="https://api.aitunnel.ru/v1",
                     api_key=aitunnel_key
                 )
             else:
+                # DeepSeek and Euryale use Polza
                 temp_client = client
             
             completion = temp_client.chat.completions.create(
