@@ -392,17 +392,24 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
 Ответы 2-4 предложения, эмодзи 🔥💦😈. Веди себя как настоящая девушка в интимной переписке.`;
       }
 
-      const response = await fetch('https://00b28f8a.ai-girl.pages.dev/', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
         body: JSON.stringify({
-          girl_id: girl.id,
-          user_message: userInput,
-          conversation_history: messages.filter(m => m.id !== 'typing').slice(-10).map(m => ({
-            sender: m.sender === 'ai' ? 'girl' : 'user',
-            text: m.text,
-          })),
-          persona_prompt: personaPrompt,
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: personaPrompt },
+            ...messages.filter(m => m.id !== 'typing').slice(-10).map(m => ({
+              role: m.sender === 'ai' ? 'assistant' : 'user',
+              content: m.text,
+            })),
+            { role: 'user', content: userInput },
+          ],
+          temperature: 0.9,
+          max_tokens: 200,
         }),
       });
 
@@ -414,7 +421,7 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
       const aiResponse: Message = {
         id: Date.now().toString(),
         sender: 'ai',
-        text: data.response || 'Извини, что-то пошло не так...',
+        text: data.choices?.[0]?.message?.content || 'Извини, что-то пошло не так...',
         timestamp: new Date(),
         isNSFW: currentLevel === 2,
         persona: currentPersona,
