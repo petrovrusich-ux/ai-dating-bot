@@ -392,7 +392,7 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
 Ответы 2-4 предложения, эмодзи 🔥💦😈. Веди себя как настоящая девушка в интимной переписке.`;
       }
 
-      const response = await fetch('https://4132a6f1.gg-2my.pages.dev', {
+      const response = await fetch('https://00b28f8a.ai-girl.pages.dev/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
