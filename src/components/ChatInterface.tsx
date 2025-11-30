@@ -122,6 +122,8 @@ const getAIResponse = (
   };
 };
 
+type AIModel = 'llama' | 'deepseek' | 'polza';
+
 const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -133,6 +135,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const [personaUnlocked, setPersonaUnlocked] = useState(girl.level >= 1);
   const [imageRequests, setImageRequests] = useState(0);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [currentModel, setCurrentModel] = useState<AIModel>('deepseek');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
@@ -392,14 +395,33 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
 Ответы 2-4 предложения, эмодзи 🔥💦😈. Веди себя как настоящая девушка в интимной переписке.`;
       }
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Choose API based on selected model
+      let apiUrl = '';
+      let apiKey = '';
+      let modelName = '';
+      
+      if (currentModel === 'llama') {
+        apiUrl = 'https://api.aitunnel.ru/v1/chat/completions';
+        apiKey = import.meta.env.VITE_AITUNNEL_API_KEY || '';
+        modelName = 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo';
+      } else if (currentModel === 'deepseek') {
+        apiUrl = 'https://api.aitunnel.ru/v1/chat/completions';
+        apiKey = import.meta.env.VITE_AITUNNEL_API_KEY || '';
+        modelName = 'deepseek-ai/DeepSeek-V3';
+      } else {
+        apiUrl = 'https://api.polza.ai/v1/chat/completions';
+        apiKey = import.meta.env.VITE_POLZA_API_KEY || '';
+        modelName = 'cognitivecomputations/dolphin-2.9.2-mixtral-8x22b';
+      }
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: modelName,
           messages: [
             { role: 'system', content: personaPrompt },
             ...messages.filter(m => m.id !== 'typing').slice(-10).map(m => ({
@@ -485,7 +507,37 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
             </Button>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 justify-center">
+              <span className="text-xs text-muted-foreground">AI модель:</span>
+              <div className="flex gap-1">
+                <Button
+                  variant={currentModel === 'llama' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setCurrentModel('llama')}
+                >
+                  Llama 3.1
+                </Button>
+                <Button
+                  variant={currentModel === 'deepseek' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setCurrentModel('deepseek')}
+                >
+                  DeepSeek
+                </Button>
+                <Button
+                  variant={currentModel === 'polza' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setCurrentModel('polza')}
+                >
+                  Dolphin 🔥
+                </Button>
+              </div>
+            </div>
+            
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Прогресс отношений</span>
               <span className="text-muted-foreground">{levelInfo.description}</span>
