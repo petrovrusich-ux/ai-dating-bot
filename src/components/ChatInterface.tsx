@@ -395,43 +395,25 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
 Ответы 2-4 предложения, эмодзи 🔥💦😈. Веди себя как настоящая девушка в интимной переписке.`;
       }
 
-      // Choose API based on selected model
-      let apiUrl = '';
-      let apiKey = '';
-      let modelName = '';
-      
-      if (currentModel === 'llama') {
-        apiUrl = 'https://api.aitunnel.ru/v1/chat/completions';
-        apiKey = import.meta.env.VITE_AITUNNEL_API_KEY || '';
-        modelName = 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo';
-      } else if (currentModel === 'deepseek') {
-        apiUrl = 'https://api.aitunnel.ru/v1/chat/completions';
-        apiKey = import.meta.env.VITE_AITUNNEL_API_KEY || '';
-        modelName = 'deepseek-ai/DeepSeek-V3';
-      } else {
-        apiUrl = 'https://api.polza.ai/v1/chat/completions';
-        apiKey = import.meta.env.VITE_POLZA_API_KEY || '';
-        modelName = 'cognitivecomputations/dolphin-2.9.2-mixtral-8x22b';
-      }
+      // Call Yandex Cloud Function with 3-tier fallback
+      const conversationHistory = messages
+        .filter(m => m.id !== 'typing')
+        .slice(-10)
+        .map(m => ({
+          role: m.sender === 'ai' ? 'assistant' : 'user',
+          content: m.text,
+        }));
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch('https://functions.poehali.dev/8dfb1a82-db60-4e1f-85ba-bd3f9678b846', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: modelName,
-          messages: [
-            { role: 'system', content: personaPrompt },
-            ...messages.filter(m => m.id !== 'typing').slice(-10).map(m => ({
-              role: m.sender === 'ai' ? 'assistant' : 'user',
-              content: m.text,
-            })),
-            { role: 'user', content: userInput },
-          ],
-          temperature: 0.9,
-          max_tokens: 200,
+          girl_id: girl.id,
+          user_message: userInput,
+          conversation_history: conversationHistory,
+          persona_prompt: personaPrompt,
         }),
       });
 
@@ -443,7 +425,7 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
       const aiResponse: Message = {
         id: Date.now().toString(),
         sender: 'ai',
-        text: data.choices?.[0]?.message?.content || 'Извини, что-то пошло не так...',
+        text: data.response || 'Извини, что-то пошло не так...',
         timestamp: new Date(),
         isNSFW: currentLevel === 2,
         persona: currentPersona,
