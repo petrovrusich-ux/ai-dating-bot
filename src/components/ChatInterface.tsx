@@ -122,8 +122,6 @@ const getAIResponse = (
   };
 };
 
-type AIModel = 'llama' | 'deepseek' | 'polza';
-
 const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -135,7 +133,6 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const [personaUnlocked, setPersonaUnlocked] = useState(girl.level >= 1);
   const [imageRequests, setImageRequests] = useState(0);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [currentModel, setCurrentModel] = useState<AIModel>('deepseek');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
@@ -490,36 +487,6 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
           </div>
 
           <div className="mt-4 space-y-3">
-            <div className="flex items-center gap-2 justify-center">
-              <span className="text-xs text-muted-foreground">AI модель:</span>
-              <div className="flex gap-1">
-                <Button
-                  variant={currentModel === 'llama' ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setCurrentModel('llama')}
-                >
-                  Llama 3.1
-                </Button>
-                <Button
-                  variant={currentModel === 'deepseek' ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setCurrentModel('deepseek')}
-                >
-                  DeepSeek
-                </Button>
-                <Button
-                  variant={currentModel === 'polza' ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setCurrentModel('polza')}
-                >
-                  Dolphin 🔥
-                </Button>
-              </div>
-            </div>
-            
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Прогресс отношений</span>
               <span className="text-muted-foreground">{levelInfo.description}</span>
