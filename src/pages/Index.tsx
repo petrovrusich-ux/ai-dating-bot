@@ -83,7 +83,12 @@ const getLevelInfo = (level: number, messagesCount: number) => {
   };
 };
 
-const Index = () => {
+interface IndexProps {
+  userData: any;
+  onLogout: () => void;
+}
+
+const Index = ({ userData, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState('gallery');
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
   const [showChat, setShowChat] = useState(false);
@@ -91,14 +96,14 @@ const Index = () => {
   const [userSubscription, setUserSubscription] = useState<{
     flirt: boolean;
     intimate: boolean;
-  }>({ flirt: false, intimate: false });
-  const [userId] = useState('user_' + Date.now());
+  }>(userData?.subscription || { flirt: false, intimate: false });
+  const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
 
   const checkSubscription = async (userId: string) => {
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/cf396c07-c7d0-4bd3-918b-a3cec4f9930a?user_id=${userId}`
+        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?subscription=true&user_id=${userId}`
       );
       const data = await response.json();
       
@@ -117,7 +122,7 @@ const Index = () => {
   const loadGirlStats = async (userId: string) => {
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67?user_id=${userId}&stats=true`
+        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?stats=true&user_id=${userId}`
       );
       const data = await response.json();
       
@@ -340,16 +345,22 @@ const Index = () => {
             <div className="max-w-2xl mx-auto space-y-6">
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-center gap-6 mb-6">
-                    <Avatar className="h-24 w-24">
-                      <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                        А
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h2 className="text-2xl font-heading font-bold mb-1">Александр</h2>
-                      <p className="text-muted-foreground">Участник с ноября 2024</p>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-6">
+                      <Avatar className="h-24 w-24">
+                        <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                          {userData?.name?.charAt(0).toUpperCase() || 'А'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h2 className="text-2xl font-heading font-bold mb-1">{userData?.name || 'Александр'}</h2>
+                        <p className="text-muted-foreground text-sm">{userData?.email || 'email@example.com'}</p>
+                      </div>
                     </div>
+                    <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+                      <Icon name="LogOut" size={16} />
+                      Выйти
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

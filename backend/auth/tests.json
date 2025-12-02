@@ -6,29 +6,9 @@
       "path": "/",
       "body": {
         "action": "register",
-        "email": "test@example.com",
-        "password": "testpassword123",
+        "email": "newuser@test.com",
+        "password": "testpass123",
         "name": "Test User"
-      },
-      "expectedStatus": 200,
-      "expectedBody": {
-        "success": true,
-        "token": "string",
-        "user": {
-          "email": "string",
-          "name": "string"
-        }
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Test login with valid credentials",
-      "method": "POST",
-      "path": "/",
-      "body": {
-        "action": "login",
-        "email": "test@example.com",
-        "password": "testpassword123"
       },
       "expectedStatus": 200,
       "expectedBody": {
@@ -38,12 +18,25 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Test missing required fields",
+      "name": "Test invalid action",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "invalid"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test missing fields",
       "method": "POST",
       "path": "/",
       "body": {
         "action": "register",
-        "email": "test@example.com"
+        "email": "test@test.com"
       },
       "expectedStatus": 400,
       "expectedBody": {

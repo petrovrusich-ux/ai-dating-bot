@@ -141,7 +141,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     const loadHistory = async () => {
       try {
         const response = await fetch(
-          `https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67?user_id=${userId}&girl_id=${girl.id}`
+          `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?messages=true&user_id=${userId}&girl_id=${girl.id}`
         );
         const data = await response.json();
         
@@ -236,10 +236,11 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
   const saveMessage = async (message: Message) => {
     try {
-      await fetch('https://functions.poehali.dev/c5dd3fbc-79a7-467a-9817-5405d79b8d67', {
+      await fetch('https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'save_message',
           user_id: userId,
           girl_id: girl.id,
           sender: message.sender,

@@ -1,8 +1,7 @@
 '''
-Business: User authentication - registration, login, token validation
-Args: event with httpMethod POST, body with action (register/login/validate), email, password, name
-      context with request_id attribute
-Returns: JWT token on success or user data for validation
+Business: Authentication + user data - register, login, validate tokens, subscriptions, messages
+Args: event with httpMethod, body/params depending on action
+Returns: JWT tokens, user data, subscription info, messages
 '''
 
 import json
@@ -21,7 +20,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token',
                 'Access-Control-Max-Age': '86400'
             },
@@ -29,52 +28,62 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    if method != 'POST':
-        return {
-            'statusCode': 405,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Method not allowed'}),
-            'isBase64Encoded': False
-        }
-    
     try:
-        body_str = event.get('body', '{}')
-        if isinstance(body_str, dict):
-            body_data = body_str
+        if method == 'POST':
+            body_str = event.get('body', '{}')
+            body_data = json.loads(body_str) if isinstance(body_str, str) else body_str
+            action = body_data.get('action')
+            
+            if action == 'register':
+                return handle_register(body_data)
+            elif action == 'login':
+                return handle_login(body_data)
+            elif action == 'validate':
+                return handle_validate(event)
+            elif action == 'save_message':
+                return handle_save_message(body_data)
+            else:
+                return error_response(400, 'Invalid action')
+        
+        elif method == 'GET':
+            params = event.get('queryStringParameters', {}) or {}
+            
+            if 'subscription' in params:
+                return handle_check_subscription(params)
+            elif 'messages' in params:
+                return handle_get_messages(params)
+            elif 'stats' in params:
+                return handle_get_stats(params)
+            else:
+                return error_response(400, 'Invalid GET request')
+        
         else:
-            body_data = json.loads(body_str) if body_str else {}
-    except json.JSONDecodeError:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Invalid JSON'}),
-            'isBase64Encoded': False
-        }
+            return error_response(405, 'Method not allowed')
     
-    action = body_data.get('action')
-    
-    if action == 'register':
-        return handle_register(body_data)
-    elif action == 'login':
-        return handle_login(body_data)
-    elif action == 'validate':
-        return handle_validate(event)
-    else:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Invalid action. Use: register, login, validate'}),
-            'isBase64Encoded': False
-        }
+    except Exception as e:
+        return error_response(500, str(e))
+
+def error_response(status: int, message: str) -> Dict[str, Any]:
+    return {
+        'statusCode': status,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'body': json.dumps({'error': message}),
+        'isBase64Encoded': False
+    }
+
+def success_response(data: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'body': json.dumps(data),
+        'isBase64Encoded': False
+    }
 
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
@@ -103,9 +112,7 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
     try:
         payload = jwt.decode(token, jwt_secret, algorithms=['HS256'])
         return payload
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
 def handle_register(body_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -114,60 +121,23 @@ def handle_register(body_data: Dict[str, Any]) -> Dict[str, Any]:
     name = body_data.get('name', '').strip()
     
     if not email or not password or not name:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Email, password and name are required'}),
-            'isBase64Encoded': False
-        }
+        return error_response(400, 'Email, password and name are required')
     
     if len(password) < 6:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Password must be at least 6 characters'}),
-            'isBase64Encoded': False
-        }
+        return error_response(400, 'Password must be at least 6 characters')
     
     if '@' not in email or '.' not in email:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Invalid email format'}),
-            'isBase64Encoded': False
-        }
+        return error_response(400, 'Invalid email format')
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        cur.execute(
-            "SELECT id FROM t_p77610913_ai_dating_bot.users WHERE email = %s",
-            (email,)
-        )
-        existing_user = cur.fetchone()
-        
-        if existing_user:
+        cur.execute("SELECT id FROM t_p77610913_ai_dating_bot.users WHERE email = %s", (email,))
+        if cur.fetchone():
             cur.close()
             conn.close()
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'Email already registered'}),
-                'isBase64Encoded': False
-            }
+            return error_response(400, 'Email already registered')
         
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
@@ -175,266 +145,252 @@ def handle_register(body_data: Dict[str, Any]) -> Dict[str, Any]:
         user_id_str = str(uuid.uuid4())
         
         cur.execute(
-            """
-            INSERT INTO t_p77610913_ai_dating_bot.users 
-            (user_id, email, password_hash, name, created_at, last_active)
-            VALUES (%s, %s, %s, %s, NOW(), NOW())
-            RETURNING id
-            """,
+            "INSERT INTO t_p77610913_ai_dating_bot.users (user_id, email, password_hash, name, created_at, last_active) VALUES (%s, %s, %s, %s, NOW(), NOW()) RETURNING id",
             (user_id_str, email, password_hash, name)
         )
-        
         user_id = cur.fetchone()[0]
-        conn.commit()
         
         cur.execute(
-            """
-            INSERT INTO t_p77610913_ai_dating_bot.subscriptions
-            (user_id, flirt, intimate, premium)
-            VALUES (%s, false, false, false)
-            """,
+            "INSERT INTO t_p77610913_ai_dating_bot.subscriptions (user_id, flirt, intimate, premium) VALUES (%s, false, false, false)",
             (user_id_str,)
         )
         conn.commit()
-        
         cur.close()
         conn.close()
         
         token = generate_token(user_id, email)
         
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'success': True,
-                'token': token,
-                'user': {
-                    'id': user_id,
-                    'email': email,
-                    'name': name
-                }
-            }),
-            'isBase64Encoded': False
-        }
+        return success_response({
+            'success': True,
+            'token': token,
+            'user': {'id': user_id, 'user_id': user_id_str, 'email': email, 'name': name}
+        })
     
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': f'Registration failed: {str(e)}'}),
-            'isBase64Encoded': False
-        }
+        return error_response(500, f'Registration failed: {str(e)}')
 
 def handle_login(body_data: Dict[str, Any]) -> Dict[str, Any]:
     email = body_data.get('email', '').strip().lower()
     password = body_data.get('password', '')
     
     if not email or not password:
-        return {
-            'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Email and password are required'}),
-            'isBase64Encoded': False
-        }
+        return error_response(400, 'Email and password are required')
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
         cur.execute(
-            """
-            SELECT id, email, password_hash, name 
-            FROM t_p77610913_ai_dating_bot.users 
-            WHERE email = %s
-            """,
+            "SELECT id, email, password_hash, name, user_id FROM t_p77610913_ai_dating_bot.users WHERE email = %s",
             (email,)
         )
-        
         user = cur.fetchone()
         
         if not user:
             cur.close()
             conn.close()
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'Invalid email or password'}),
-                'isBase64Encoded': False
-            }
+            return error_response(401, 'Invalid email or password')
         
-        user_id, user_email, password_hash, name = user
+        user_id, user_email, password_hash, name, user_id_str = user
         
-        if not password_hash:
+        if not password_hash or not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
             cur.close()
             conn.close()
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'Account exists but password not set. Please use social login or reset password.'}),
-                'isBase64Encoded': False
-            }
+            return error_response(401, 'Invalid email or password')
         
-        if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
-            cur.close()
-            conn.close()
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'Invalid email or password'}),
-                'isBase64Encoded': False
-            }
-        
-        cur.execute(
-            "UPDATE t_p77610913_ai_dating_bot.users SET last_active = NOW() WHERE id = %s",
-            (user_id,)
-        )
+        cur.execute("UPDATE t_p77610913_ai_dating_bot.users SET last_active = NOW() WHERE id = %s", (user_id,))
         conn.commit()
-        
         cur.close()
         conn.close()
         
         token = generate_token(user_id, user_email)
         
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'success': True,
-                'token': token,
-                'user': {
-                    'id': user_id,
-                    'email': user_email,
-                    'name': name
-                }
-            }),
-            'isBase64Encoded': False
-        }
+        return success_response({
+            'success': True,
+            'token': token,
+            'user': {'id': user_id, 'user_id': user_id_str, 'email': user_email, 'name': name}
+        })
     
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': f'Login failed: {str(e)}'}),
-            'isBase64Encoded': False
-        }
+        return error_response(500, f'Login failed: {str(e)}')
 
 def handle_validate(event: Dict[str, Any]) -> Dict[str, Any]:
     headers = event.get('headers', {})
     token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
     
     if not token:
-        return {
-            'statusCode': 401,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'No token provided'}),
-            'isBase64Encoded': False
-        }
+        return error_response(401, 'No token provided')
     
     payload = verify_token(token)
-    
     if not payload:
-        return {
-            'statusCode': 401,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': 'Invalid or expired token'}),
-            'isBase64Encoded': False
-        }
+        return error_response(401, 'Invalid or expired token')
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
         cur.execute(
-            """
-            SELECT u.id, u.email, u.name, u.user_id,
-                   s.flirt, s.intimate, s.premium
-            FROM t_p77610913_ai_dating_bot.users u
-            LEFT JOIN t_p77610913_ai_dating_bot.subscriptions s ON u.user_id = s.user_id
-            WHERE u.id = %s
-            """,
+            """SELECT u.id, u.email, u.name, u.user_id, s.flirt, s.intimate, s.premium
+               FROM t_p77610913_ai_dating_bot.users u
+               LEFT JOIN t_p77610913_ai_dating_bot.subscriptions s ON u.user_id = s.user_id
+               WHERE u.id = %s""",
             (payload['user_id'],)
         )
-        
         user = cur.fetchone()
         
         if not user:
             cur.close()
             conn.close()
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'User not found'}),
-                'isBase64Encoded': False
-            }
+            return error_response(401, 'User not found')
         
         user_id, email, name, user_id_str, flirt, intimate, premium = user
+        cur.close()
+        conn.close()
+        
+        return success_response({
+            'valid': True,
+            'user': {
+                'id': user_id,
+                'user_id': user_id_str,
+                'email': email,
+                'name': name,
+                'subscription': {'flirt': flirt or False, 'intimate': intimate or False, 'premium': premium or False}
+            }
+        })
+    
+    except Exception as e:
+        return error_response(500, f'Validation failed: {str(e)}')
+
+def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
+    user_id = params.get('user_id')
+    if not user_id:
+        return error_response(400, 'Missing user_id parameter')
+    
+    result = {'user_id': user_id, 'has_subscription': False, 'subscription_type': None, 'subscription_end': None, 'purchased_girls': [], 'has_all_girls': False}
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT subscription_type, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE AND end_date > CURRENT_TIMESTAMP ORDER BY end_date DESC LIMIT 1",
+            (user_id,)
+        )
+        subscription = cur.fetchone()
+        
+        if subscription:
+            result['has_subscription'] = True
+            result['subscription_type'] = subscription[0]
+            result['subscription_end'] = subscription[1].isoformat()
+        
+        cur.execute("SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s", (user_id,))
+        purchases = cur.fetchall()
+        
+        for purchase_type, girl_id in purchases:
+            if purchase_type == 'all_girls':
+                result['has_all_girls'] = True
+            elif purchase_type == 'one_girl' and girl_id and girl_id not in result['purchased_girls']:
+                result['purchased_girls'].append(girl_id)
+        
+        cur.close()
+        conn.close()
+    except:
+        pass
+    
+    return success_response(result)
+
+def handle_get_messages(params: Dict[str, str]) -> Dict[str, Any]:
+    user_id = params.get('user_id')
+    girl_id = params.get('girl_id')
+    
+    if not user_id or not girl_id:
+        return error_response(400, 'Missing user_id or girl_id')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT id, sender, text, is_nsfw, persona, image_url, created_at FROM t_p77610913_ai_dating_bot.messages WHERE user_id = %s AND girl_id = %s ORDER BY created_at ASC",
+            (user_id, girl_id)
+        )
+        rows = cur.fetchall()
+        
+        messages = [{'id': str(row[0]), 'sender': row[1], 'text': row[2], 'isNSFW': row[3], 'persona': row[4], 'image': row[5], 'timestamp': row[6].isoformat() if row[6] else None} for row in rows]
         
         cur.close()
         conn.close()
         
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'valid': True,
-                'user': {
-                    'id': user_id,
-                    'user_id': user_id_str,
-                    'email': email,
-                    'name': name,
-                    'subscription': {
-                        'flirt': flirt or False,
-                        'intimate': intimate or False,
-                        'premium': premium or False
-                    }
-                }
-            }),
-            'isBase64Encoded': False
-        }
+        return success_response({'messages': messages})
     
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'error': f'Validation failed: {str(e)}'}),
-            'isBase64Encoded': False
-        }
+        return error_response(500, str(e))
+
+def handle_get_stats(params: Dict[str, str]) -> Dict[str, Any]:
+    user_id = params.get('user_id')
+    girl_id = params.get('girl_id')
+    
+    if not user_id:
+        return error_response(400, 'Missing user_id')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if girl_id:
+            cur.execute(
+                "SELECT user_id, girl_id, total_messages, relationship_level, last_interaction FROM t_p77610913_ai_dating_bot.user_girl_stats WHERE user_id = %s AND girl_id = %s",
+                (user_id, girl_id)
+            )
+            row = cur.fetchone()
+            result = {'user_id': user_id, 'girl_id': girl_id, 'total_messages': 0, 'relationship_level': 0, 'last_interaction': None} if not row else {'user_id': row[0], 'girl_id': row[1], 'total_messages': row[2], 'relationship_level': row[3], 'last_interaction': row[4].isoformat() if row[4] else None}
+        else:
+            cur.execute(
+                "SELECT user_id, girl_id, total_messages, relationship_level, last_interaction FROM t_p77610913_ai_dating_bot.user_girl_stats WHERE user_id = %s ORDER BY last_interaction DESC",
+                (user_id,)
+            )
+            rows = cur.fetchall()
+            result = [{'user_id': row[0], 'girl_id': row[1], 'total_messages': row[2], 'relationship_level': row[3], 'last_interaction': row[4].isoformat() if row[4] else None} for row in rows]
+        
+        cur.close()
+        conn.close()
+        
+        return success_response({'stats': result})
+    
+    except Exception as e:
+        return error_response(500, str(e))
+
+def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
+    user_id = body_data.get('user_id')
+    girl_id = body_data.get('girl_id')
+    sender = body_data.get('sender')
+    text = body_data.get('text')
+    is_nsfw = body_data.get('is_nsfw', False)
+    persona = body_data.get('persona')
+    image_url = body_data.get('image_url')
+    
+    if not user_id or not girl_id or not sender or not text:
+        return error_response(400, 'Missing required fields')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "INSERT INTO t_p77610913_ai_dating_bot.messages (user_id, girl_id, sender, text, is_nsfw, persona, image_url, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW()) RETURNING id",
+            (user_id, girl_id, sender, text, is_nsfw, persona, image_url)
+        )
+        message_id = cur.fetchone()[0]
+        
+        cur.execute(
+            "INSERT INTO t_p77610913_ai_dating_bot.user_girl_stats (user_id, girl_id, total_messages, relationship_level, last_interaction) VALUES (%s, %s, 1, 0, NOW()) ON CONFLICT (user_id, girl_id) DO UPDATE SET total_messages = t_p77610913_ai_dating_bot.user_girl_stats.total_messages + 1, last_interaction = NOW()",
+            (user_id, girl_id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return success_response({'success': True, 'message_id': message_id})
+    
+    except Exception as e:
+        return error_response(500, str(e))
