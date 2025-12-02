@@ -42,6 +42,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return handle_validate(event)
             elif action == 'save_message':
                 return handle_save_message(body_data)
+            elif action == 'delete_chat':
+                return handle_delete_chat(body_data)
             else:
                 return error_response(400, 'Invalid action')
         
@@ -54,6 +56,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return handle_get_messages(params)
             elif 'stats' in params:
                 return handle_get_stats(params)
+            elif 'active_chats' in params:
+                return handle_get_active_chats(params)
             else:
                 return error_response(400, 'Invalid GET request')
         
@@ -423,6 +427,67 @@ def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
         conn.close()
         
         return success_response({'success': True, 'message_id': message_id})
+    
+    except Exception as e:
+        return error_response(500, str(e))
+
+def handle_delete_chat(body_data: Dict[str, Any]) -> Dict[str, Any]:
+    user_id = body_data.get('user_id')
+    girl_id = body_data.get('girl_id')
+    
+    if not user_id or not girl_id:
+        return error_response(400, 'Missing user_id or girl_id')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "DELETE FROM t_p77610913_ai_dating_bot.messages WHERE user_id = %s AND girl_id = %s",
+            (user_id, girl_id)
+        )
+        
+        cur.execute(
+            "DELETE FROM t_p77610913_ai_dating_bot.user_girl_stats WHERE user_id = %s AND girl_id = %s",
+            (user_id, girl_id)
+        )
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return success_response({'success': True, 'deleted': True})
+    
+    except Exception as e:
+        return error_response(500, str(e))
+
+def handle_get_active_chats(params: Dict[str, str]) -> Dict[str, Any]:
+    user_id = params.get('user_id')
+    
+    if not user_id:
+        return error_response(400, 'Missing user_id')
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT girl_id, total_messages, relationship_level, last_interaction FROM t_p77610913_ai_dating_bot.user_girl_stats WHERE user_id = %s ORDER BY last_interaction DESC",
+            (user_id,)
+        )
+        rows = cur.fetchall()
+        
+        active_chats = [{
+            'girl_id': row[0],
+            'total_messages': row[1],
+            'relationship_level': row[2],
+            'last_interaction': row[3].isoformat() if row[3] else None
+        } for row in rows]
+        
+        cur.close()
+        conn.close()
+        
+        return success_response({'active_chats': active_chats})
     
     except Exception as e:
         return error_response(500, str(e))

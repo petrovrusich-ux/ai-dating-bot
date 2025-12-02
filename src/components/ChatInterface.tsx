@@ -39,6 +39,7 @@ interface ChatInterfaceProps {
     intimate: boolean;
   };
   userId: string;
+  onDeleteChat?: (girlId: string) => void;
 }
 
 const getLevelInfo = (level: number, messagesCount: number) => {
@@ -122,7 +123,7 @@ const getAIResponse = (
   };
 };
 
-const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId }: ChatInterfaceProps) => {
+const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId, onDeleteChat }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [inputValue, setInputValue] = useState('');
@@ -474,9 +475,25 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <Icon name="X" size={20} />
-            </Button>
+            <div className="flex items-center gap-2">
+              {onDeleteChat && (
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    if (confirm(`Удалить всю историю переписки с ${girl.name}?`)) {
+                      onDeleteChat(girl.id);
+                    }
+                  }}
+                  title="Удалить диалог"
+                >
+                  <Icon name="Trash2" size={20} className="text-destructive" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
           </div>
 
           <div className="mt-4 space-y-2">

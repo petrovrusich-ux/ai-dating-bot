@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -99,6 +99,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   }>(userData?.subscription || { flirt: false, intimate: false });
   const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
+  const [activeChats, setActiveChats] = useState<Girl[]>([]);
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -141,6 +142,38 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     }
   };
 
+  const loadActiveChats = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?active_chats=true&user_id=${userId}`
+      );
+      const data = await response.json();
+      
+      if (data.active_chats && Array.isArray(data.active_chats)) {
+        const chats = data.active_chats
+          .map((chat: any) => {
+            const girl = mockGirls.find(g => g.id === chat.girl_id);
+            if (!girl) return null;
+            return {
+              ...girl,
+              level: chat.relationship_level,
+              messagesCount: chat.total_messages,
+              unlocked: true
+            };
+          })
+          .filter((g: Girl | null) => g !== null);
+        setActiveChats(chats);
+      }
+    } catch (error) {
+      console.error('Active chats loading error:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadGirlStats(userId);
+    loadActiveChats(userId);
+  }, [userId]);
+
   const handleOpenChat = async (girl: Girl) => {
     await checkSubscription(userId);
     setSelectedGirl(girl);
@@ -151,6 +184,34 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     setShowChat(false);
     setSelectedGirl(null);
     loadGirlStats(userId);
+    loadActiveChats(userId);
+  };
+
+  const handleDeleteChat = async (girlId: string) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete_chat',
+          user_id: userId,
+          girl_id: girlId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowChat(false);
+        setSelectedGirl(null);
+        loadGirlStats(userId);
+        loadActiveChats(userId);
+      }
+    } catch (error) {
+      console.error('Delete chat error:', error);
+    }
   };
 
   const handleSubscribe = async (planType: string, amount: number) => {
@@ -203,9 +264,11 @@ const Index = ({ userData, onLogout }: IndexProps) => {
             <TabsTrigger value="chats" className="flex items-center gap-2">
               <Icon name="MessageCircle" size={18} />
               Диалоги
-              <Badge variant="secondary" className="ml-1 animate-pulse-glow">
-                1
-              </Badge>
+              {activeChats.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {activeChats.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Icon name="User" size={18} />
@@ -292,10 +355,21 @@ const Index = ({ userData, onLogout }: IndexProps) => {
 
           <TabsContent value="chats" className="animate-fade-in">
             <div className="space-y-4">
-              {mockGirls
-                .filter((g) => g.unlocked)
-                .map((girl) => {
-                  const levelInfo = getLevelInfo(girl.level, girl.messagesCount);
+              {activeChats.length === 0 ? (
+                <div className="text-center py-12">
+                  <Icon name="MessageCircle" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-heading font-semibold mb-2">Нет активных диалогов</h3>
+                  <p className="text-muted-foreground mb-4">Начните общение с девушками из галереи</p>
+                  <Button onClick={() => setActiveTab('gallery')}>
+                    Перейти в галерею
+                  </Button>
+                </div>
+              ) : (
+                activeChats.map((girl) => {
+                  const stats = girlStats[girl.id];
+                  const displayLevel = stats ? stats.relationship_level : girl.level;
+                  const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
+                  const levelInfo = getLevelInfo(displayLevel, displayMessagesCount);
                   return (
                     <Card
                       key={girl.id}
@@ -309,26 +383,17 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                               <AvatarImage src={girl.image} alt={girl.name} />
                               <AvatarFallback>{girl.name[0]}</AvatarFallback>
                             </Avatar>
-                            {girl.hasNewMessage && (
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-intimate-glow rounded-full animate-pulse-glow" />
-                            )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
                               <h3 className="font-heading font-semibold text-lg">{girl.name}</h3>
-                              <span className="text-xs text-muted-foreground">2 мин назад</span>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {girl.hasNewMessage
-                                ? 'Привет! Как твои дела? 💕'
-                                : 'Вы: Спасибо за приятный вечер'}
-                            </p>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
                                 {levelInfo.title}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {girl.messagesCount} сообщений
+                                {displayMessagesCount} сообщений
                               </span>
                             </div>
                           </div>
@@ -337,7 +402,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       </CardContent>
                     </Card>
                   );
-                })}
+                })
+              )}
             </div>
           </TabsContent>
 
@@ -533,6 +599,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           onClose={handleCloseChat} 
           userSubscription={userSubscription}
           userId={userId}
+          onDeleteChat={handleDeleteChat}
         />
       )}
     </div>
