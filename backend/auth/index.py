@@ -163,7 +163,19 @@ def handle_register(body_data: Dict[str, Any]) -> Dict[str, Any]:
         return success_response({
             'success': True,
             'token': token,
-            'user': {'id': user_id, 'user_id': user_id_str, 'email': email, 'name': name}
+            'user': {
+                'id': user_id,
+                'user_id': user_id_str,
+                'email': email,
+                'name': name,
+                'subscription': {
+                    'subscription_type': 'free',
+                    'end_date': '2099-12-31',
+                    'flirt': False,
+                    'intimate': False,
+                    'premium': False
+                }
+            }
         })
     
     except Exception as e:
@@ -198,6 +210,20 @@ def handle_login(body_data: Dict[str, Any]) -> Dict[str, Any]:
             conn.close()
             return error_response(401, 'Invalid email or password')
         
+        cur.execute(
+            "SELECT subscription_type, end_date, flirt, intimate, premium FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s",
+            (user_id_str,)
+        )
+        subscription = cur.fetchone()
+        
+        subscription_data = {
+            'subscription_type': subscription[0] if subscription else 'free',
+            'end_date': subscription[1].isoformat() if subscription and subscription[1] else None,
+            'flirt': subscription[2] if subscription else False,
+            'intimate': subscription[3] if subscription else False,
+            'premium': subscription[4] if subscription else False
+        }
+        
         cur.execute("UPDATE t_p77610913_ai_dating_bot.users SET last_active = NOW() WHERE id = %s", (user_id,))
         conn.commit()
         cur.close()
@@ -208,7 +234,13 @@ def handle_login(body_data: Dict[str, Any]) -> Dict[str, Any]:
         return success_response({
             'success': True,
             'token': token,
-            'user': {'id': user_id, 'user_id': user_id_str, 'email': user_email, 'name': name}
+            'user': {
+                'id': user_id,
+                'user_id': user_id_str,
+                'email': user_email,
+                'name': name,
+                'subscription': subscription_data
+            }
         })
     
     except Exception as e:
