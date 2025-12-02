@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PhotoManager from "./components/PhotoManager";
 import LoginPage from "./components/LoginPage";
-import ProfilePage from "./components/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +92,6 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index userData={userData} onLogout={handleLogout} />} />
-            <Route path="/profile" element={<ProfilePage userData={userData} onLogout={handleLogout} />} />
             <Route path="/admin/photos" element={<PhotoManager />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
