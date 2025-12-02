@@ -151,8 +151,8 @@ def handle_register(body_data: Dict[str, Any]) -> Dict[str, Any]:
         user_id = cur.fetchone()[0]
         
         cur.execute(
-            "INSERT INTO t_p77610913_ai_dating_bot.subscriptions (user_id, flirt, intimate, premium) VALUES (%s, false, false, false)",
-            (user_id_str,)
+            "INSERT INTO t_p77610913_ai_dating_bot.subscriptions (user_id, subscription_type, end_date, flirt, intimate, premium) VALUES (%s, %s, %s, false, false, false)",
+            (user_id_str, 'free', '2099-12-31')
         )
         conn.commit()
         cur.close()
