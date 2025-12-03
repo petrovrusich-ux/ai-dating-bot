@@ -94,7 +94,7 @@ const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Пароль</label>
+              <label className="block text-sm font-medium mb-2">Пароль (если вы забыли пароль, обратитесь в поддержку)</label>
               <Input
                 type="password"
                 placeholder="Минимум 6 символов"
