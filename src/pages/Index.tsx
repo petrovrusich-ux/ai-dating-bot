@@ -502,7 +502,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     </div>
                     <h3 className="text-2xl font-heading font-bold mb-2">Флирт </h3>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold">500 ₽</span>
+                      <span className="text-4xl font-bold">490 ₽</span>
                       <span className="text-muted-foreground">/ неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
@@ -545,7 +545,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     <h3 className="text-2xl font-heading font-bold mb-2">Интим</h3>
                     <div className="mb-4">
                       <span className="text-4xl font-bold">990₽</span>
-                      <span className="text-muted-foreground">/месяц</span>
+                      <span className="text-muted-foreground"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
                       <li className="flex items-start gap-2">
