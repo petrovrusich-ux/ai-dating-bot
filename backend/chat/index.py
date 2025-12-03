@@ -7,8 +7,53 @@ Returns: AI-generated response text
 
 import json
 import os
+import psycopg2
 from openai import OpenAI
 from typing import Dict, Any, List, Optional
+
+def get_db_connection():
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise Exception('DATABASE_URL not configured')
+    return psycopg2.connect(database_url)
+
+def check_message_limit(user_id: str) -> Dict[str, Any]:
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            "SELECT total_messages FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
+            (user_id,)
+        )
+        result = cur.fetchone()
+        total_messages = result[0] if result else 0
+        
+        cur.execute(
+            "SELECT flirt, intimate FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
+            (user_id,)
+        )
+        subscription = cur.fetchone()
+        
+        has_flirt = subscription[0] if subscription else False
+        has_intimate = subscription[1] if subscription else False
+        
+        cur.close()
+        conn.close()
+        
+        if has_intimate:
+            return {'allowed': True, 'total_messages': total_messages, 'limit': None}
+        elif has_flirt:
+            if total_messages >= 50:
+                return {'allowed': False, 'total_messages': total_messages, 'limit': 50, 'reason': 'flirt_limit'}
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 50}
+        else:
+            if total_messages >= 20:
+                return {'allowed': False, 'total_messages': total_messages, 'limit': 20, 'reason': 'free_limit'}
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 20}
+    except Exception as e:
+        print(f"❌ check_message_limit error: {str(e)}")
+        return {'allowed': True, 'total_messages': 0, 'limit': None}
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'POST')
@@ -56,20 +101,38 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     girl_id = body_data.get('girl_id')
+    user_id = body_data.get('user_id')
     user_message = body_data.get('user_message')
     conversation_history = body_data.get('conversation_history', [])
     persona_prompt = body_data.get('persona_prompt', '')
     
-    print(f"📥 REQUEST: girl_id={girl_id}, user_message_len={len(user_message) if user_message else 0}, history_len={len(conversation_history)}")
+    print(f"📥 REQUEST: girl_id={girl_id}, user_id={user_id}, user_message_len={len(user_message) if user_message else 0}, history_len={len(conversation_history)}")
     
-    if not girl_id or not user_message:
+    if not girl_id or not user_message or not user_id:
         return {
             'statusCode': 400,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({'error': 'Missing required fields: girl_id, user_message'}),
+            'body': json.dumps({'error': 'Missing required fields: girl_id, user_id, user_message'}),
+            'isBase64Encoded': False
+        }
+    
+    limit_check = check_message_limit(user_id)
+    if not limit_check['allowed']:
+        return {
+            'statusCode': 403,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'Message limit reached',
+                'total_messages': limit_check['total_messages'],
+                'limit': limit_check['limit'],
+                'reason': limit_check['reason']
+            }),
             'isBase64Encoded': False
         }
     
@@ -489,8 +552,29 @@ CRITICAL: REMEMBER CONTEXT BETWEEN MESSAGES!
                 # CRITICAL: Do NOT save censored response, just skip to next tier
                 continue  # Try next tier
             
-            # Success! Return response (only non-censored responses reach here)
+            # Success! Update message counter and return response
             print(f"✅ {tier_name} succeeded: {response_text[:100]}...")
+            
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    INSERT INTO t_p77610913_ai_dating_bot.user_message_stats (user_id, total_messages, updated_at)
+                    VALUES (%s, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT (user_id) DO UPDATE 
+                    SET total_messages = t_p77610913_ai_dating_bot.user_message_stats.total_messages + 1,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (user_id,)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+                print(f"✅ Message counter incremented for user {user_id}")
+            except Exception as e:
+                print(f"⚠️ Failed to increment counter: {str(e)}")
+            
             return {
                 'statusCode': 200,
                 'headers': {

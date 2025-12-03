@@ -38,6 +38,9 @@ interface ChatInterfaceProps {
   userSubscription?: {
     flirt: boolean;
     intimate: boolean;
+    total_messages?: number;
+    message_limit?: number | null;
+    can_send_message?: boolean;
   };
   userId: string;
   onDeleteChat?: (girlId: string) => void;
@@ -124,7 +127,7 @@ const getAIResponse = (
   };
 };
 
-const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false }, userId, onDeleteChat }: ChatInterfaceProps) => {
+const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false, can_send_message: true }, userId, onDeleteChat }: ChatInterfaceProps) => {
   const getMaxAllowedLevel = () => {
     if (userSubscription.intimate) return 2;
     if (userSubscription.flirt) return 1;
@@ -358,6 +361,11 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
+    
+    if (userSubscription.can_send_message === false) {
+      setShowNSFWWarning(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -410,6 +418,7 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           girl_id: girl.id,
+          user_id: userId,
           user_message: userInput,
           conversation_history: messages.filter(m => m.id !== 'typing').slice(-10).map(m => ({
             sender: m.sender === 'ai' ? 'girl' : 'user',
@@ -420,6 +429,12 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
       });
 
       const data = await response.json();
+      
+      if (response.status === 403) {
+        setMessages((prev) => prev.filter(m => m.id !== 'typing'));
+        setShowNSFWWarning(true);
+        return;
+      }
 
       // Remove typing indicator and add real response
       setMessages((prev) => prev.filter(m => m.id !== 'typing'));
@@ -661,10 +676,27 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
             </div>
           )}
           
+          {userSubscription.can_send_message === false && (
+            <div className="mb-2 p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Icon name="Lock" size={16} className="text-destructive" />
+                <span className="text-sm font-semibold text-destructive">
+                  Лимит сообщений исчерпан
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {userSubscription.total_messages}/{userSubscription.message_limit} сообщений использовано. 
+                Оформите подписку для продолжения общения.
+              </p>
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <Input
               placeholder={
-                currentLevel === 0
+                userSubscription.can_send_message === false
+                  ? 'Оформите подписку для продолжения...'
+                  : currentLevel === 0
                   ? 'Познакомься с ней...'
                   : currentLevel === 1
                   ? 'Скажи что-то приятное...'
@@ -674,8 +706,13 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               className="flex-1"
+              disabled={userSubscription.can_send_message === false}
             />
-            <Button onClick={handleSendMessage} size="icon" disabled={!inputValue.trim()}>
+            <Button 
+              onClick={handleSendMessage} 
+              size="icon" 
+              disabled={!inputValue.trim() || userSubscription.can_send_message === false}
+            >
               <Icon name="Send" size={20} />
             </Button>
           </div>

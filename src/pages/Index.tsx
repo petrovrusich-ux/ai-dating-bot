@@ -101,6 +101,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const [userSubscription, setUserSubscription] = useState<{
     flirt: boolean;
     intimate: boolean;
+    total_messages?: number;
+    message_limit?: number | null;
+    can_send_message?: boolean;
   }>(userData?.subscription || { flirt: false, intimate: false });
   const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
@@ -116,6 +119,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       setUserSubscription({
         flirt: data.flirt || false,
         intimate: data.intimate || false,
+        total_messages: data.total_messages || 0,
+        message_limit: data.message_limit,
+        can_send_message: data.can_send_message !== undefined ? data.can_send_message : true,
       });
       
       return data;

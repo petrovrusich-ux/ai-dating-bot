@@ -347,6 +347,23 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             elif purchase_type == 'one_girl' and girl_id and girl_id not in result['purchased_girls']:
                 result['purchased_girls'].append(girl_id)
         
+        cur.execute(
+            "SELECT total_messages FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
+            (user_id,)
+        )
+        message_stats = cur.fetchone()
+        result['total_messages'] = message_stats[0] if message_stats else 0
+        
+        if result['intimate']:
+            result['message_limit'] = None
+            result['can_send_message'] = True
+        elif result['flirt']:
+            result['message_limit'] = 50
+            result['can_send_message'] = result['total_messages'] < 50
+        else:
+            result['message_limit'] = 20
+            result['can_send_message'] = result['total_messages'] < 20
+        
         cur.close()
         conn.close()
     except:

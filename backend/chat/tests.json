@@ -6,6 +6,7 @@
       "path": "/",
       "body": {
         "girl_id": "emma",
+        "user_id": "test_user_123",
         "user_message": "Hi! How are you?",
         "conversation_history": [],
         "persona_prompt": "You are Emma, a friendly and flirty AI girlfriend. You love to chat and make people smile."
@@ -22,6 +23,7 @@
       "path": "/",
       "body": {
         "girl_id": "test",
+        "user_id": "test_user_456",
         "user_message": "Tell me about yourself",
         "conversation_history": [],
         "persona_prompt": "You are a test character for censorship detection."
