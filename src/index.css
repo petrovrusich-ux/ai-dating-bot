@@ -66,3 +66,74 @@
     font-family: "Montserrat", sans-serif;
   }
 }
+
+@layer utilities {
+  .neon-text {
+    text-shadow:
+      0 0 7px hsl(var(--primary)),
+      0 0 10px hsl(var(--primary)),
+      0 0 21px hsl(var(--primary)),
+      0 0 42px hsl(var(--secondary)),
+      0 0 82px hsl(var(--secondary)),
+      0 0 92px hsl(var(--secondary)),
+      0 0 102px hsl(var(--secondary)),
+      0 0 151px hsl(var(--secondary));
+    animation: neon-flicker 3s infinite alternate;
+  }
+
+  @keyframes neon-flicker {
+    0%,
+    19%,
+    21%,
+    23%,
+    25%,
+    54%,
+    56%,
+    100% {
+      text-shadow:
+        0 0 7px hsl(var(--primary)),
+        0 0 10px hsl(var(--primary)),
+        0 0 21px hsl(var(--primary)),
+        0 0 42px hsl(var(--secondary)),
+        0 0 82px hsl(var(--secondary)),
+        0 0 92px hsl(var(--secondary)),
+        0 0 102px hsl(var(--secondary)),
+        0 0 151px hsl(var(--secondary));
+    }
+    20%,
+    24%,
+    55% {
+      text-shadow: none;
+    }
+  }
+
+  .spray-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .spray-underline::after {
+    content: "";
+    position: absolute;
+    left: -2%;
+    bottom: -8px;
+    width: 104%;
+    height: 12px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(239, 68, 68, 0.3) 5%,
+      rgba(239, 68, 68, 0.8) 15%,
+      rgba(239, 68, 68, 1) 25%,
+      rgba(239, 68, 68, 0.9) 40%,
+      rgba(239, 68, 68, 1) 55%,
+      rgba(239, 68, 68, 0.8) 70%,
+      rgba(239, 68, 68, 0.6) 85%,
+      rgba(239, 68, 68, 0.3) 95%,
+      transparent 100%
+    );
+    filter: blur(2px) url(#spray-texture);
+    opacity: 0.85;
+    transform: skewX(-2deg);
+  }
+}

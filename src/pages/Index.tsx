@@ -313,10 +313,12 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <header className="mb-8">
-          <h1 className="text-4xl font-heading font-bold text-foreground mb-2 animate-fade-in">
-            AI Romance
+          <h1 className="text-5xl md:text-6xl font-heading font-bold text-foreground mb-3 animate-fade-in neon-text">
+            AI ROMANCE
           </h1>
-          <p className="text-muted-foreground">Прогрессивные отношения с AI-девушками 18+</p>
+          <p className="text-muted-foreground text-lg spray-underline inline-block">
+            Прогрессивные отношения с AI-девушками 18+
+          </p>
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
