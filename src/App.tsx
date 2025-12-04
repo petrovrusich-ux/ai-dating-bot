@@ -12,7 +12,6 @@ import LoginPage from "./components/LoginPage";
 import AgeVerificationModal from "./components/AgeVerificationModal";
 import Offer from "./pages/Offer";
 import Privacy from "./pages/Privacy";
-import ProfilePage from "./components/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -106,7 +105,6 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index userData={userData} onLogout={handleLogout} />} />
-            <Route path="/profile" element={<ProfilePage userData={userData} onLogout={handleLogout} />} />
             <Route path="/admin/photos" element={<PhotoManager />} />
             <Route path="/offer" element={<Offer />} />
             <Route path="/privacy" element={<Privacy />} />
