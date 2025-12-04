@@ -23,7 +23,7 @@ const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://functions.yandexcloud.net/d4eitvins1bg5slrsjh2', {
+      const response = await fetch('https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,9 +152,9 @@ const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
           </form>
 
           <div className="mt-6 pt-6 border-t space-y-2">
-            <p className="text-xs text-center text-muted-foreground font-semibold mb-3"></p>
-            <p className="text-xs text-center text-muted-foreground"></p>
-            <p className="text-xs text-center text-muted-foreground"></p>
+            <p className="text-xs text-center text-muted-foreground font-semibold mb-3">Информация о сервисе</p>
+            <p className="text-xs text-center text-muted-foreground">ИП Петров Илья Дмитриевич</p>
+            <p className="text-xs text-center text-muted-foreground">ИНН: 616809818160</p>
           </div>
         </CardContent>
       </Card>

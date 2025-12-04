@@ -157,7 +157,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     const loadHistory = async () => {
       try {
         const response = await fetch(
-          `https://functions.yandexcloud.net/d4e0d89mb6682ju4c5sj?messages=true&user_id=${userId}&girl_id=${girl.id}`
+          `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?messages=true&user_id=${userId}&girl_id=${girl.id}`
         );
         const data = await response.json();
         
