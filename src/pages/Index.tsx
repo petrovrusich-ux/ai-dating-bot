@@ -477,6 +477,54 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Icon name="Phone" size={20} />
+                    Контакты
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Icon name="Mail" size={18} className="text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Почта</p>
+                        <a href="mailto:1ilyapetrov@vk.com" className="text-sm text-primary hover:underline">1ilyapetrov@vk.com</a>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Icon name="MessageCircle" size={18} className="text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Поддержка в Telegram</p>
+                        <a href="https://t.me/petrovboxing" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">@petrovboxing</a>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Icon name="Phone" size={18} className="text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Телефон</p>
+                        <a href="tel:+79614009996" className="text-sm text-primary hover:underline">+7 961 400-99-96</a>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Icon name="MapPin" size={18} className="text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Почтовый адрес</p>
+                        <p className="text-sm text-muted-foreground">58383948854</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Реквизиты</p>
+                      <p className="text-sm">ИП Петров Илья Дмитриевич</p>
+                      <p className="text-sm text-muted-foreground">ИНН: 616809818160</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
