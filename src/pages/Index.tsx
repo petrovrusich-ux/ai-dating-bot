@@ -609,7 +609,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
 
                     <div className="pt-4 border-t space-y-2">
                       <p className="text-xs font-medium text-muted-foreground">Реквизиты</p>
-                      <p className="text-sm">ИП Петров Илья Дмитриевич</p>
+                      <p className="text-xs"> Петров И.Д.</p>
                       <p className="text-sm text-muted-foreground">ИНН: 616809818160</p>
                     </div>
                   </div>
