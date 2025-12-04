@@ -129,7 +129,7 @@ const Privacy = () => {
               <h2 className="text-xl font-semibold mb-3">10. Контактная информация</h2>
               <div className="text-muted-foreground leading-relaxed space-y-2">
                 <p>Оператор персональных данных:</p>
-                <p className="font-medium text-card-foreground">ИП Петров Илья Дмитриевич</p>
+                <p className="font-medium text-card-foreground">Петров Илья Дмитриевич</p>
                 <p>ИНН: 616809818160</p>
                 <p className="mt-3">
                   По всем вопросам, связанным с обработкой персональных данных, вы можете обратиться через форму обратной связи в сервисе.
