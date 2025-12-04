@@ -15,6 +15,7 @@ const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,15 +96,26 @@ const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
 
             <div>
               <label className="block text-sm font-medium mb-2">Пароль (если вы забыли , обратитесь в поддержку)</label>
-              <Input
-                type="password"
-                placeholder="Минимум 6 символов"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Минимум 6 символов"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={isLoading}
+                >
+                  <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
+                </button>
+              </div>
             </div>
 
             {error && (
