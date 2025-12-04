@@ -615,7 +615,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       className="w-full" 
                       size="lg" 
                       variant="secondary"
-                      onClick={() => handleSubscribe('intimate', 990)}
+                      onClick={() => handleSubscribe('intimate', 1490)}
                       disabled={isProcessingPayment}
                     >
                       {isProcessingPayment ? 'Обработка...' : 'Оформить подписку'}
@@ -630,19 +630,19 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     Разовые покупки
                   </h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-card p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSubscribe('one_girl', 299)}>
+                    <div className="bg-card p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSubscribe('one_girl', 399)}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Одна девушка на  24  часа!</span>
+                        <span className="font-medium">Одна девушка на 24 часа</span>
                         <Badge>399₽</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">Полный доступ к безлимитному интимному общению с одной выбранной девушкой.</p>
+                      <p className="text-sm text-muted-foreground">Режим интим с одной девушкой на выбор ровно на сутки</p>
                     </div>
                     <div className="bg-card p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSubscribe('all_girls', 799)}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Все девушки на 1 день!</span>
+                        <span className="font-medium">Все девушки на 1 день</span>
                         <Badge>799₽</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">Уровень "Интим" со всеми девушками на 24 часа.</p>
+                      <p className="text-sm text-muted-foreground">Режим интим со всеми девушками на 24 часа</p>
                     </div>
                   </div>
                 </CardContent>
