@@ -668,16 +668,12 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
           
           {(isBlocked || userSubscription.can_send_message === false) && (
             <div className="mb-2 p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2">
                 <Icon name="Lock" size={16} className="text-destructive" />
                 <span className="text-sm font-semibold text-destructive">
                   Лимит сообщений исчерпан
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {userSubscription.total_messages}/{userSubscription.message_limit} сообщений использовано. 
-                Оформите подписку для продолжения общения.
-              </p>
             </div>
           )}
           

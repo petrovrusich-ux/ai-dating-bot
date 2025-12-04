@@ -78,28 +78,6 @@
       0 0 92px hsl(var(--secondary)),
       0 0 102px hsl(var(--secondary)),
       0 0 151px hsl(var(--secondary));
-    animation: neon-glow 4s ease-in-out infinite alternate;
-  }
-
-  @keyframes neon-glow {
-    0% {
-      text-shadow:
-        0 0 5px hsl(var(--primary)),
-        0 0 8px hsl(var(--primary)),
-        0 0 15px hsl(var(--primary)),
-        0 0 30px hsl(var(--secondary)),
-        0 0 60px hsl(var(--secondary));
-    }
-    100% {
-      text-shadow:
-        0 0 10px hsl(var(--primary)),
-        0 0 20px hsl(var(--primary)),
-        0 0 30px hsl(var(--primary)),
-        0 0 50px hsl(var(--secondary)),
-        0 0 100px hsl(var(--secondary)),
-        0 0 120px hsl(var(--secondary)),
-        0 0 140px hsl(var(--secondary));
-    }
   }
 
   .spray-underline {
