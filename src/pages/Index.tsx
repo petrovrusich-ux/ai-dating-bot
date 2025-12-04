@@ -697,29 +697,29 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                   </div>
                 )}
                 <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
+                  <label htmlFor="terms" className="flex items-start gap-4 cursor-pointer">
+                    <div className="relative flex-shrink-0">
                       <Checkbox 
                         id="terms" 
                         checked={agreedToTerms}
                         onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                        className="mt-1 h-6 w-6 border-2 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-primary data-[state=checked]:to-secondary"
+                        className="mt-1 h-6 w-6 border-2 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-primary data-[state=checked]:to-secondary cursor-pointer"
                       />
                       {!agreedToTerms && (
-                        <div className="absolute inset-0 animate-ping rounded border-2 border-primary" />
+                        <div className="absolute inset-0 animate-ping rounded border-2 border-primary pointer-events-none" />
                       )}
                     </div>
-                    <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer flex-1">
+                    <div className="text-sm leading-relaxed flex-1">
                       <span className="font-semibold">Я ознакомился и согласен с условиями </span>
-                      <Link to="/offer" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50">
+                      <Link to="/offer" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50" onClick={(e) => e.stopPropagation()}>
                         публичной оферты
                       </Link>
                       <span className="font-semibold"> и </span>
-                      <Link to="/privacy" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50">
+                      <Link to="/privacy" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50" onClick={(e) => e.stopPropagation()}>
                         политики конфиденциальности
                       </Link>
-                    </label>
-                  </div>
+                    </div>
+                  </label>
                 </CardContent>
               </Card>
 
