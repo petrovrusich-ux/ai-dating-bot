@@ -477,43 +477,63 @@ const Index = ({ userData, onLogout }: IndexProps) => {
 
           <TabsContent value="profile" className="animate-fade-in">
             <div className="max-w-2xl mx-auto space-y-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-6">
-                      <Avatar className="h-24 w-24">
-                        <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                          {userData?.name?.charAt(0).toUpperCase() || 'А'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h2 className="text-2xl font-heading font-bold mb-1">{userData?.name || 'Александр'}</h2>
-                        <p className="text-muted-foreground text-sm">{userData?.email || 'email@example.com'}</p>
+              <Card className="relative overflow-hidden border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
+                <CardContent className="relative p-6">
+                  <div className="flex flex-col md:flex-row items-center md:items-start justify-between mb-6 gap-6">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-accent rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse-glow" />
+                        <Avatar className="relative h-28 w-28 ring-4 ring-background/50 shadow-2xl">
+                          <AvatarFallback className="text-3xl bg-gradient-to-br from-primary via-secondary to-accent text-white font-bold">
+                            {userData?.name?.charAt(0).toUpperCase() || 'А'}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="text-center md:text-left">
+                        <h2 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
+                          {userData?.name || 'Александр'}
+                        </h2>
+                        <p className="text-muted-foreground">{userData?.email || 'email@example.com'}</p>
                       </div>
                     </div>
-                    <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
-                      <Icon name="LogOut" size={16} />
+                    <Button 
+                      variant="outline" 
+                      onClick={onLogout} 
+                      className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Icon name="LogOut" size={16} className="text-white" />
+                      </div>
                       Выйти
                     </Button>
                   </div>
 
-                  <div className="bg-muted rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Icon name="Crown" size={20} className="text-primary" />
-                      <span className="font-medium">Статус подписки</span>
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/50 p-5">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5" />
+                    <div className="relative flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center">
+                        <Icon name="Crown" size={20} className="text-white" />
+                      </div>
+                      <span className="font-semibold text-lg">Статус подписки</span>
                     </div>
                     {userSubscription.flirt || userSubscription.intimate ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Тип:</span>
-                          <Badge variant={userSubscription.intimate ? "default" : "secondary"}>
-                            {userSubscription.intimate ? "Интим" : "Флирт"}
+                      <div className="relative space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                          <span className="text-sm font-medium text-muted-foreground">Тип подписки:</span>
+                          <Badge 
+                            className={userSubscription.intimate 
+                              ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 shadow-lg" 
+                              : "bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 shadow-lg"
+                            }
+                          >
+                            {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
                           </Badge>
                         </div>
                         {userSubscription.subscription_end && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Действует до:</span>
-                            <span className="text-sm font-medium">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                            <span className="text-sm font-medium text-muted-foreground">Действует до:</span>
+                            <span className="text-sm font-semibold">
                               {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
                                 day: 'numeric', 
                                 month: 'long',
@@ -525,92 +545,126 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         )}
                       </div>
                     ) : userSubscription.purchase_expires && userSubscription.purchase_type ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Разовая покупка:</span>
-                          <Badge variant="secondary">
-                            {userSubscription.purchase_type === 'one_girl' ? 'Одна девушка' : 'Все девушки'}
+                      <div className="relative space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                          <span className="text-sm font-medium text-muted-foreground">Разовая покупка:</span>
+                          <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg">
+                            {userSubscription.purchase_type === 'one_girl' ? '👤 Одна девушка' : '👥 Все девушки'}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Осталось времени:</span>
-                          <span className="text-sm font-medium text-primary">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                          <span className="text-sm font-medium text-muted-foreground">Осталось времени:</span>
+                          <span className="text-sm font-semibold text-primary">
                             {(() => {
                               const now = new Date();
                               const expires = new Date(userSubscription.purchase_expires);
                               const diff = expires.getTime() - now.getTime();
                               const hours = Math.floor(diff / (1000 * 60 * 60));
                               const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                              return `${hours}ч ${minutes}м`;
+                              return `⏱️ ${hours}ч ${minutes}м`;
                             })()}
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Подписка отсутствует</p>
+                      <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Подписка отсутствует</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-xl">
                 <CardContent className="p-6">
-                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-2">
-                    <Icon name="Shield" size={20} />
+                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                      <Icon name="Shield" size={20} className="text-white" />
+                    </div>
                     Безопасность и конфиденциальность
                   </h3>
-                  <div className="space-y-3 text-sm text-muted-foreground">
-                    <p>✅ Все персонажи созданы искусственным интеллектом</p>
-                    <p>✅ Строгая проверка возраста 18+</p>
-                    <p>✅ Ваши данные полностью конфиденциальны</p>
-                    <p>✅ Возможность удалить аккаунт в любой момент</p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <span className="text-xl">🤖</span>
+                      <p className="text-sm">Все персонажи созданы искусственным интеллектом</p>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <span className="text-xl">🔞</span>
+                      <p className="text-sm">Строгая проверка возраста 18+</p>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <span className="text-xl">🔒</span>
+                      <p className="text-sm">Ваши данные полностью конфиденциальны</p>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <span className="text-xl">🗑️</span>
+                      <p className="text-sm">Возможность удалить аккаунт в любой момент</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-xl">
                 <CardContent className="p-6">
-                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-2">
-                    <Icon name="Phone" size={20} />
+                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                      <Icon name="Phone" size={20} className="text-white" />
+                    </div>
                     Контакты
                   </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Icon name="Mail" size={18} className="text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Почта</p>
-                        <a href="mailto:1ilyapetrov@vk.com" className="text-sm text-primary hover:underline">1ilyapetrov@vk.com</a>
+                  <div className="grid md:grid-cols-2 gap-3 mb-4">
+                    <a href="mailto:1ilyapetrov@vk.com" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Icon name="Mail" size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Почта</p>
+                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">1ilyapetrov@vk.com</p>
+                        </div>
+                      </div>
+                    </a>
+
+                    <a href="https://t.me/petrovboxing" target="_blank" rel="noopener noreferrer" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Icon name="MessageCircle" size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Telegram</p>
+                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">@petrovboxing</p>
+                        </div>
+                      </div>
+                    </a>
+
+                    <a href="tel:+79614009996" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Icon name="Phone" size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Телефон</p>
+                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">+7 961 400-99-96</p>
+                        </div>
+                      </div>
+                    </a>
+
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                          <Icon name="MapPin" size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Адрес</p>
+                          <p className="text-sm font-semibold">58383948854</p>
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex items-start gap-3">
-                      <Icon name="MessageCircle" size={18} className="text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Поддержка в Telegram</p>
-                        <a href="https://t.me/petrovboxing" target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">@petrovboxing</a>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Icon name="Phone" size={18} className="text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Телефон</p>
-                        <a href="tel:+79614009996" className="text-sm text-primary hover:underline">+7 961 400-99-96</a>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Icon name="MapPin" size={18} className="text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Почтовый адрес</p>
-                        <p className="text-sm text-muted-foreground">58383948854</p>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">Реквизиты</p>
-                      <p className="text-xs"> Петров И.Д.</p>
-                      <p className="text-muted-foreground text-xs">ИНН: 616809818160</p>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+                    <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Реквизиты</p>
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-semibold">ИП Петров Илья Дмитриевич</p>
+                      <p className="text-sm text-muted-foreground font-mono">ИНН: 616809818160</p>
                     </div>
                   </div>
                 </CardContent>
