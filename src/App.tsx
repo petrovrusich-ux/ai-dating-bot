@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PhotoManager from "./components/PhotoManager";
 import LoginPage from "./components/LoginPage";
+import AgeVerificationModal from "./components/AgeVerificationModal";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AgeVerificationModal />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index userData={userData} onLogout={handleLogout} />} />
