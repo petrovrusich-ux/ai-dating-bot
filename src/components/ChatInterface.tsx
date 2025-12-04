@@ -44,6 +44,7 @@ interface ChatInterfaceProps {
   };
   userId: string;
   onDeleteChat?: (girlId: string) => void;
+  onShowSubscription?: () => void;
 }
 
 const getLevelInfo = (level: number, messagesCount: number) => {
@@ -127,7 +128,7 @@ const getAIResponse = (
   };
 };
 
-const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false, can_send_message: true }, userId, onDeleteChat }: ChatInterfaceProps) => {
+const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false, can_send_message: true }, userId, onDeleteChat, onShowSubscription }: ChatInterfaceProps) => {
   const getMaxAllowedLevel = () => {
     if (userSubscription.intimate) return 2;
     if (userSubscription.flirt) return 1;
@@ -728,6 +729,47 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
           }}
           onCancel={() => setShowDeleteDialog(false)}
         />
+      )}
+
+      {showNSFWWarning && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
+                <Icon name="Lock" size={32} className="text-destructive" />
+              </div>
+              <h3 className="text-2xl font-heading font-bold mb-3">NSFW контент заблокирован</h3>
+              <p className="text-muted-foreground mb-6">
+                {currentLevel === 0
+                  ? 'Достигнут лимит сообщений на уровне "Знакомство". Для перехода к флирту и интимному общению нужна подписка.'
+                  : currentLevel === 1
+                  ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту оформите подписку "Интим".'
+                  : 'Для доступа к NSFW-контенту и интимным фото необходима подписка "Интим".'}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowNSFWWarning(false)}
+                  className="flex-1"
+                >
+                  Закрыть
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowNSFWWarning(false);
+                    onClose();
+                    if (onShowSubscription) {
+                      onShowSubscription();
+                    }
+                  }}
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                >
+                  Посмотреть тарифы
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

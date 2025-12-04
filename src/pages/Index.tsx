@@ -871,6 +871,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           userSubscription={userSubscription}
           userId={userId}
           onDeleteChat={handleDeleteChat}
+          onShowSubscription={() => setActiveTab('subscription')}
         />
       )}
 
