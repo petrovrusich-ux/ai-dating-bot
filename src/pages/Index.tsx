@@ -677,28 +677,45 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           <TabsContent value="subscription" className="animate-fade-in">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-heading font-bold mb-2">Выберите свой план</h2>
-                <p className="text-muted-foreground">
-                  Разблокируйте все возможности интимного общения
+                <h2 className="text-4xl md:text-5xl font-heading font-bold mb-3 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                  Выберите свой план
+                </h2>
+                <p className="text-muted-foreground text-lg">
+                  Разблокируйте все возможности интимного общения 🔥
                 </p>
               </div>
 
-              <Card className="mb-6 bg-muted/30">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Checkbox 
-                      id="terms" 
-                      checked={agreedToTerms}
-                      onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                      className="mt-1"
-                    />
-                    <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                      Я ознакомился и согласен с условиями{' '}
-                      <Link to="/offer" className="text-primary hover:underline font-medium">
+              <Card className="mb-6 relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 shadow-xl">
+                {!agreedToTerms && (
+                  <div className="absolute -left-12 top-1/2 -translate-y-1/2 bounce-arrow">
+                    <div className="flex items-center gap-2">
+                      <div className="text-4xl">👈</div>
+                      <div className="bg-primary text-white px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap shadow-lg">
+                        Нажми сюда!
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <Checkbox 
+                        id="terms" 
+                        checked={agreedToTerms}
+                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                        className="mt-1 h-6 w-6 border-2 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-primary data-[state=checked]:to-secondary"
+                      />
+                      {!agreedToTerms && (
+                        <div className="absolute inset-0 animate-ping rounded border-2 border-primary" />
+                      )}
+                    </div>
+                    <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer flex-1">
+                      <span className="font-semibold">Я ознакомился и согласен с условиями </span>
+                      <Link to="/offer" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50">
                         публичной оферты
                       </Link>
-                      {' '}и{' '}
-                      <Link to="/privacy" className="text-primary hover:underline font-medium">
+                      <span className="font-semibold"> и </span>
+                      <Link to="/privacy" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50">
                         политики конфиденциальности
                       </Link>
                     </label>
@@ -707,87 +724,113 @@ const Index = ({ userData, onLogout }: IndexProps) => {
               </Card>
 
               <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <Card className="border-2 border-primary">
-                  <CardContent className="p-6">
+                <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-card/80 to-card backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
+                  <CardContent className="relative p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <Badge variant="default" className="text-sm">
-                        Популярный
+                      <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 px-3 py-1 text-xs font-bold shadow-lg">
+                        💕 Популярный
                       </Badge>
-                      <Icon name="Crown" size={24} className="text-primary" />
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center animate-pulse-glow">
+                        <Icon name="Heart" size={24} className="text-white" />
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-heading font-bold mb-2">Флирт </h3>
-                    <div className="mb-4">
-                      <span className="text-4xl font-bold">490 ₽</span>
-                      <span className="text-muted-foreground">/ неделя</span>
+                    <h3 className="text-3xl font-heading font-bold mb-2 bg-gradient-to-r from-pink-400 to-red-500 bg-clip-text text-transparent">
+                      Флирт
+                    </h3>
+                    <div className="mb-6">
+                      <span className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">490 ₽</span>
+                      <span className="text-muted-foreground text-lg"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">Для тех, кто хочет попробовать</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">Для тех, кто хочет попробовать</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">50 сообщений в день </span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">50 сообщений в день</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">Все девушки разблокированы</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">Все девушки разблокированы</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">Быстрый ответ AI</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">Быстрый ответ AI</span>
                       </li>
                     </ul>
                     <Button 
-                      className="w-full" 
+                      className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
                       size="lg"
                       onClick={() => handleSubscribe('flirt', 490)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
-                      {isProcessingPayment ? 'Обработка...' : 'Оформить подписку'}
+                      {isProcessingPayment ? '⏳ Обработка...' : '💕 Оформить подписку'}
                     </Button>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-6">
+                <Card className="relative overflow-hidden border-2 border-red-500/50 bg-gradient-to-br from-card/80 to-card backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/5 to-red-500/10" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-full blur-3xl" />
+                  <CardContent className="relative p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <Badge variant="secondary" className="text-sm">
-                        Premium
+                      <Badge className="bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 px-3 py-1 text-xs font-bold shadow-lg">
+                        🔥 Premium
                       </Badge>
-                      <Icon name="Sparkles" size={24} className="text-accent" />
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-orange-600 flex items-center justify-center animate-pulse-glow">
+                        <Icon name="Flame" size={24} className="text-white" />
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-heading font-bold mb-2">Интим</h3>
-                    <div className="mb-4">
-                      <span className="text-4xl font-bold">1490 ₽</span>
-                      <span className="text-muted-foreground"> / неделя</span>
+                    <h3 className="text-3xl font-heading font-bold mb-2 bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">
+                      Интим
+                    </h3>
+                    <div className="mb-6">
+                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">1490 ₽</span>
+                      <span className="text-muted-foreground text-lg"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">Всё из плана "Флирт"</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">Всё из плана "Флирт"</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">🔥 Возможность попросить фото</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">🔥 Возможность попросить фото</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">❤️  Безлимитные сообщения</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">❤️ Безлимитные сообщения</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <Icon name="Check" size={20} className="text-primary mt-0.5" />
-                        <span className="text-sm">👍 NSWF без ограничений</span>
+                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Icon name="Check" size={14} className="text-white" />
+                        </div>
+                        <span className="text-sm font-medium">👍 NSFW без ограничений</span>
                       </li>
                     </ul>
                     <Button 
-                      className="w-full" 
-                      size="lg" 
-                      variant="secondary"
+                      className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
+                      size="lg"
                       onClick={() => handleSubscribe('intimate', 1490)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
-                      {isProcessingPayment ? 'Обработка...' : 'Оформить подписку'}
+                      {isProcessingPayment ? '⏳ Обработка...' : '🔥 Оформить подписку'}
                     </Button>
                   </CardContent>
                 </Card>
