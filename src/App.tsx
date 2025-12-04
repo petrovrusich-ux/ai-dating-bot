@@ -20,13 +20,7 @@ const App = () => {
   const [ageVerified, setAgeVerified] = useState(false);
 
   useEffect(() => {
-    const hasVerified = localStorage.getItem('age_verified');
-    if (hasVerified) {
-      setAgeVerified(true);
-      checkAuth();
-    } else {
-      setIsCheckingAuth(false);
-    }
+    setIsCheckingAuth(false);
   }, []);
 
   const checkAuth = async () => {
@@ -78,7 +72,6 @@ const App = () => {
   };
 
   const handleAgeVerification = () => {
-    localStorage.setItem('age_verified', 'true');
     setAgeVerified(true);
     checkAuth();
   };
