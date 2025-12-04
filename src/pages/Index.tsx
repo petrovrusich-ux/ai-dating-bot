@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import ChatInterface from '@/components/ChatInterface';
+import GirlSelectionModal from '@/components/GirlSelectionModal';
 
 interface Girl {
   id: string;
@@ -114,6 +115,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
   const [activeChats, setActiveChats] = useState<Girl[]>([]);
+  const [showGirlSelection, setShowGirlSelection] = useState(false);
+  const [selectedPurchaseType, setSelectedPurchaseType] = useState<'one_girl' | 'all_girls'>('one_girl');
+  const [selectedPurchasePrice, setSelectedPurchasePrice] = useState(0);
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -235,6 +239,13 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   };
 
   const handleSubscribe = async (planType: string, amount: number) => {
+    if (planType === 'one_girl') {
+      setSelectedPurchaseType('one_girl');
+      setSelectedPurchasePrice(amount);
+      setShowGirlSelection(true);
+      return;
+    }
+
     setIsProcessingPayment(true);
     
     try {
@@ -247,6 +258,39 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           plan_type: planType,
           amount: amount,
           user_id: userId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        alert('Ошибка создания платежа. Попробуйте позже.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleGirlSelect = async (girlId: string) => {
+    setShowGirlSelection(false);
+    setIsProcessingPayment(true);
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan_type: selectedPurchaseType,
+          amount: selectedPurchasePrice,
+          user_id: userId,
+          girl_id: girlId,
         }),
       });
 
@@ -730,6 +774,15 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           onDeleteChat={handleDeleteChat}
         />
       )}
+
+      <GirlSelectionModal
+        isOpen={showGirlSelection}
+        onClose={() => setShowGirlSelection(false)}
+        girls={mockGirls}
+        onSelectGirl={handleGirlSelect}
+        purchaseType={selectedPurchaseType}
+        price={selectedPurchasePrice}
+      />
     </div>
   );
 };

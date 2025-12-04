@@ -17,7 +17,7 @@ def get_db_connection():
         raise Exception('DATABASE_URL not configured')
     return psycopg2.connect(database_url)
 
-def check_message_limit(user_id: str) -> Dict[str, Any]:
+def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str, Any]:
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -38,10 +38,26 @@ def check_message_limit(user_id: str) -> Dict[str, Any]:
         has_flirt = subscription[0] if subscription else False
         has_intimate = subscription[1] if subscription else False
         
+        cur.execute(
+            "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
+            (user_id,)
+        )
+        active_purchases = cur.fetchall()
+        
+        has_one_time_access = False
+        if active_purchases:
+            for purchase_type, purchased_girl_id in active_purchases:
+                if purchase_type == 'all_girls':
+                    has_one_time_access = True
+                    break
+                elif purchase_type == 'one_girl' and girl_id and purchased_girl_id == girl_id:
+                    has_one_time_access = True
+                    break
+        
         cur.close()
         conn.close()
         
-        if has_intimate:
+        if has_intimate or has_one_time_access:
             return {'allowed': True, 'total_messages': total_messages, 'limit': None}
         elif has_flirt:
             if total_messages >= 50:
@@ -119,7 +135,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    limit_check = check_message_limit(user_id)
+    limit_check = check_message_limit(user_id, girl_id)
     if not limit_check['allowed']:
         return {
             'statusCode': 403,
