@@ -1,4 +1,5 @@
 {
+  "get-db-url": "https://functions.poehali.dev/66ab0984-546f-4543-8946-e5326778f719",
   "auth": "https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1",
   "chat": "https://functions.poehali.dev/8dfb1a82-db60-4e1f-85ba-bd3f9678b846",
   "webhook": "https://functions.poehali.dev/9deef060-1512-4cdf-abca-83718c26834e",

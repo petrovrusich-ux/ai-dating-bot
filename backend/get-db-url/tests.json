@@ -1,0 +1,12 @@
+{
+  "tests": [{
+    "name": "Get DATABASE_URL",
+    "method": "GET",
+    "path": "/",
+    "expectedStatus": 200,
+    "expectedBody": {
+      "database_url": "string"
+    },
+    "bodyMatcher": "partial"
+  }]
+}
