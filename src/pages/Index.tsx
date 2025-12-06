@@ -632,7 +632,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-0.5">Telegram</p>
-                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">@petrovboxing</p>
+                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">@airomance1</p>
                         </div>
                       </div>
                     </a>
