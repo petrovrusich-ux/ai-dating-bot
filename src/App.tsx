@@ -34,7 +34,7 @@ const App = () => {
     }
 
     try {
-      const response = await fetch('https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1', {
+      const response = await fetch('https://functions.yandexcloud.net/d4eitvins1bg5slrsjh2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
