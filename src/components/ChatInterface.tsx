@@ -645,7 +645,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
             <Input
               placeholder={
                 (isBlocked || userSubscription.can_send_message === false)
-                  ? 'Оформите подписку для продолжения...'
+                  ? 'Подключите тариф для продолжения...'
                   : currentLevel === 0
                   ? 'Познакомься с ней...'
                   : currentLevel === 1
@@ -701,10 +701,10 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
               <h3 className="text-2xl font-heading font-bold mb-3">NSFW контент заблокирован</h3>
               <p className="text-muted-foreground mb-6">
                 {currentLevel === 0
-                  ? 'Достигнут лимит сообщений на уровне "Знакомство". Для перехода к флирту и интимному общению нужна подписка.'
+                  ? 'Достигнут лимит сообщений на уровне "Знакомство". Для перехода к флирту и интимному общению нужен тариф.'
                   : currentLevel === 1
-                  ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту оформите подписку "Интим".'
-                  : 'Для доступа к NSFW-контенту и интимным фото необходима подписка "Интим".'}
+                  ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим".'
+                  : 'Для доступа к NSFW-контенту и интимным фото необходим тариф "Интим".'}
               </p>
               <div className="flex gap-3">
                 <Button
