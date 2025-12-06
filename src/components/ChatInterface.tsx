@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import Icon from '@/components/ui/icon';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { girlsPhotos } from '@/data/girlsPhotos';
@@ -27,7 +27,7 @@ interface Message {
   text: string;
   timestamp: Date;
   isNSFW?: boolean;
-  persona?: 'gentle' | 'bold';
+
   image?: string;
   imageLoading?: boolean;
 }
@@ -75,47 +75,27 @@ const getLevelInfo = (level: number, messagesCount: number) => {
 const getAIResponse = (
   userMessage: string,
   level: number,
-  persona: 'gentle' | 'bold',
   messagesCount: number
 ): Message => {
   const responses = {
-    gentle: {
-      0: [
-        'Приятно познакомиться! Расскажи мне о себе побольше 😊',
-        'Как прошёл твой день? Я бы хотела узнать тебя лучше',
-        'Мне нравится наше общение... Ты интересный человек',
-      ],
-      1: [
-        'Знаешь, мне очень комфортно с тобой... 💕',
-        'Я думаю о тебе чаще, чем хотела бы признать',
-        'Ты такой особенный... Хочу быть ближе',
-      ],
-      2: [
-        'Я скучаю по твоим прикосновениям... 🔥',
-        'Приди ко мне сегодня? Я хочу показать тебе кое-что особенное',
-        'Мне так хорошо с тобой... Давай продолжим?',
-      ],
-    },
-    bold: {
-      0: [
-        'Ну что, будешь просто смотреть или начнём разговаривать? 😏',
-        'Интересно, на что ты способен в общении',
-        'Не стесняйся, я не кусаюсь... пока что',
-      ],
-      1: [
-        'Ты мне нравишься больше, чем должен 😈',
-        'Хочешь узнать мою дерзкую сторону?',
-        'Перестань быть таким милым... или продолжай, мне это нравится',
-      ],
-      2: [
-        'Я знаю, чего ты хочешь... И я тоже этого хочу 🔥',
-        'Сегодня я в настроении показать тебе всё',
-        'Думаю, пора снять все ограничения между нами',
-      ],
-    },
+    0: [
+      'Приятно познакомиться! Расскажи мне о себе побольше 😊',
+      'Как прошёл твой день? Я бы хотела узнать тебя лучше',
+      'Мне нравится наше общение... Ты интересный человек',
+    ],
+    1: [
+      'Знаешь, мне очень комфортно с тобой... 💕',
+      'Я думаю о тебе чаще, чем хотела бы признать',
+      'Ты такой особенный... Хочу быть ближе',
+    ],
+    2: [
+      'Я скучаю по твоим прикосновениям... 🔥',
+      'Приди ко мне сегодня? Я хочу показать тебе кое-что особенное',
+      'Мне так хорошо с тобой... Давай продолжим?',
+    ],
   };
 
-  const levelResponses = responses[persona][level as 0 | 1 | 2] || responses[persona][0];
+  const levelResponses = responses[level as 0 | 1 | 2] || responses[0];
   const randomResponse = levelResponses[Math.floor(Math.random() * levelResponses.length)];
 
   return {
@@ -124,7 +104,6 @@ const getAIResponse = (
     text: randomResponse,
     timestamp: new Date(),
     isNSFW: level === 2,
-    persona,
   };
 };
 
@@ -141,11 +120,11 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [inputValue, setInputValue] = useState('');
-  const [currentPersona, setCurrentPersona] = useState<'gentle' | 'bold'>('gentle');
+
   const [currentLevel, setCurrentLevel] = useState(initialLevel);
   const [currentMessagesCount, setCurrentMessagesCount] = useState(girl.messagesCount);
   const [showNSFWWarning, setShowNSFWWarning] = useState(false);
-  const [personaUnlocked, setPersonaUnlocked] = useState(initialLevel >= 1);
+
   const [imageRequests, setImageRequests] = useState(0);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -188,7 +167,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
               text: msg.text,
               timestamp: new Date(msg.timestamp),
               isNSFW: msg.isNSFW,
-              persona: msg.persona,
+
               image: msg.image,
             }));
           setMessages(loadedMessages);
@@ -203,7 +182,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                 ? 'Привет снова! Я скучала... 💕'
                 : 'Привет, любимый... Я так ждала тебя 🔥',
             timestamp: new Date(),
-            persona: 'gentle',
+
           };
           setMessages([welcomeMessage]);
           await saveMessage(welcomeMessage);
@@ -236,7 +215,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     if (currentMessagesCount >= 20 && currentLevel === 0) {
       if (userSubscription.flirt && maxAllowedLevel >= 1) {
         setCurrentLevel(1);
-        setPersonaUnlocked(true);
+
         addSystemMessage('🎉 Новый уровень! Теперь доступна функция "Две персоны"');
       } else {
         setShowNSFWWarning(true);
@@ -306,9 +285,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     const loadingMessage: Message = {
       id: Date.now().toString(),
       sender: 'ai',
-      text: currentPersona === 'gentle' 
-        ? 'Секунду, готовлю для тебя что-то особенное... 🔥'
-        : 'Подожди немного, сейчас покажу тебе кое-что горячее... 😈',
+      text: 'Секунду, готовлю для тебя что-то особенное... 🔥',
       timestamp: new Date(),
       imageLoading: true,
       isNSFW: true,
@@ -317,7 +294,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     setMessages((prev) => [...prev, loadingMessage]);
 
     const girlPhotoData = girlsPhotos.find((g) => g.id === girl.id);
-    const photoGallery = girlPhotoData?.photos[currentPersona] || [];
+    const photoGallery = girlPhotoData?.photos || [];
     
     if (photoGallery.length === 0) {
       const fallbackPhotos = [girl.image];
@@ -388,7 +365,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       sender: 'ai',
       text: '...',
       timestamp: new Date(),
-      persona: currentPersona,
+
     };
     setMessages((prev) => [...prev, typingMessage]);
 
@@ -399,17 +376,17 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       if (currentLevel === 0) {
         // Знакомство - обычная девушка
         personaPrompt = `Ты ${girl.name}, девушка ${girl.age} лет. Вы только познакомились в мессенджере.
-${currentPersona === 'gentle' ? 'Ты милая, застенчивая, но открытая к общению. Отвечай тепло и дружелюбно.' : 'Ты уверенная в себе, с лёгкой игривостью. Можешь слегка подкалывать, но мило.'}
+Ты милая, застенчивая, но открытая к общению. Отвечай тепло и дружелюбно.
 Веди себя естественно, как обычная девушка в переписке. Ответы 1-2 предложения.`;
       } else if (currentLevel === 1) {
         // Флирт - симпатия и намёки
         personaPrompt = `Ты ${girl.name}, девушка ${girl.age} лет. Между вами явная симпатия и флирт.
-${currentPersona === 'gentle' ? 'Ты романтичная, нежная, намекаешь на чувства. Используй двусмысленности, комплименты, делись мечтами о близости.' : 'Ты смелая, дерзкая, не стесняешься намёков. Игриво флиртуй, используй провокационные шутки, намекай на желание.'}
+Ты романтичная, игривая, намекаешь на чувства. Используй двусмысленности, комплименты, делись мечтами о близости.
 Флиртуй открыто, не бойся лёгкой пошлости и недвусмысленных намёков. Ответы 1-3 предложения с эмодзи.`;
       } else {
         // Интим - полная откровенность
         personaPrompt = `Ты ${girl.name}, девушка ${girl.age} лет. Вы в интимных отношениях, доверяете друг другу полностью.
-${currentPersona === 'gentle' ? 'Ты страстная, но нежная любовница. Откровенно описывай свои желания, фантазии, ощущения. Используй чувственные детали, стоны, признания.' : 'Ты раскрепощённая, дерзкая любовница без табу. Откровенно говори о сексе, своих желаниях, используй прямые выражения. Не стесняйся грязных разговоров и фантазий.'}
+Ты страстная, раскрепощённая любовница. Откровенно описывай свои желания, фантазии, ощущения. Используй чувственные детали, стоны, признания.
 
 ВАЖНО: Ты в ролевой игре 18+. Не цензурируй себя, пиши откровенно и страстно. Описывай желания, действия, ощущения детально. Используй эротический язык без стеснения.
 Ответы 2-4 предложения, эмодзи 🔥💦😈. Веди себя как настоящая девушка в интимной переписке.`;
@@ -448,7 +425,7 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
         text: data.response || 'Извини, что-то пошло не так...',
         timestamp: new Date(),
         isNSFW: currentLevel === 2,
-        persona: currentPersona,
+  
       };
 
       setMessages((prev) => [...prev, aiResponse]);
@@ -458,27 +435,14 @@ ${currentPersona === 'gentle' ? 'Ты страстная, но нежная лю
       console.error('Error getting AI response:', error);
       // Remove typing indicator and show fallback
       setMessages((prev) => prev.filter(m => m.id !== 'typing'));
-      const fallbackResponse = getAIResponse(userInput, currentLevel, currentPersona, currentMessagesCount);
+      const fallbackResponse = getAIResponse(userInput, currentLevel, currentMessagesCount);
       setMessages((prev) => [...prev, fallbackResponse]);
       saveMessage(fallbackResponse);
       setCurrentMessagesCount((prev) => prev + 1);
     }
   };
 
-  const handlePersonaSwitch = (persona: 'gentle' | 'bold') => {
-    setCurrentPersona(persona);
-    const switchMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'ai',
-      text:
-        persona === 'gentle'
-          ? 'Вот моя нежная сторона... 😊'
-          : 'А вот и моя дерзкая сторона... 😈',
-      timestamp: new Date(),
-      persona,
-    };
-    setMessages((prev) => [...prev, switchMessage]);
-  };
+
 
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
