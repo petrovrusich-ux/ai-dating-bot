@@ -620,7 +620,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-0.5">Почта</p>
-                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">1ilyapetrov@vk.com</p>
+                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">airomance@yandex.ru</p>
                         </div>
                       </div>
                     </a>
