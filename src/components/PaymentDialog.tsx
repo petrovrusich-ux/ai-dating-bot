@@ -87,7 +87,7 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
         toast({
           title: '✅ Оплата успешна!',
           description: product.type === 'subscription' 
-            ? `Подписка "${product.name}" активирована`
+            ? `Тариф "${product.name}" активирован`
             : 'Доступ открыт навсегда',
         });
         
@@ -115,7 +115,7 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Icon name="CreditCard" size={24} className="text-primary" />
-            Оформление {product.type === 'subscription' ? 'подписки' : 'покупки'}
+            Оформление {product.type === 'subscription' ? 'тарифа' : 'покупки'}
           </DialogTitle>
         </DialogHeader>
 

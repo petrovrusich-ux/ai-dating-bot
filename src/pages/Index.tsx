@@ -342,7 +342,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <Icon name="Crown" size={18} />
-              Подписка
+              Тарифы
             </TabsTrigger>
           </TabsList>
 
@@ -517,12 +517,12 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center">
                         <Icon name="Crown" size={20} className="text-white" />
                       </div>
-                      <span className="font-semibold text-lg">Статус подписки</span>
+                      <span className="font-semibold text-lg">Статус тарифа</span>
                     </div>
                     {userSubscription.flirt || userSubscription.intimate ? (
                       <div className="relative space-y-3">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Тип подписки:</span>
+                          <span className="text-sm font-medium text-muted-foreground">Активный тариф:</span>
                           <Badge 
                             className={userSubscription.intimate 
                               ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 shadow-lg" 
@@ -569,7 +569,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Подписка отсутствует</p>
+                      <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Тариф не подключён</p>
                     )}
                   </div>
                 </CardContent>
@@ -774,7 +774,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       onClick={() => handleSubscribe('flirt', 490)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
-                      {isProcessingPayment ? '⏳ Обработка...' : '💕 Оформить подписку'}
+                      {isProcessingPayment ? '⏳ Обработка...' : '💕 Подключить тариф'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -830,7 +830,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       onClick={() => handleSubscribe('intimate', 1490)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
-                      {isProcessingPayment ? '⏳ Обработка...' : '🔥 Оформить подписку'}
+                      {isProcessingPayment ? '⏳ Обработка...' : '🔥 Подключить тариф'}
                     </Button>
                   </CardContent>
                 </Card>
