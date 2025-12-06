@@ -200,7 +200,17 @@ const Index = ({ userData, onLogout }: IndexProps) => {
 
   const handleOpenChat = async (girl: Girl) => {
     await checkSubscription(userId);
-    setSelectedGirl(girl);
+    
+    // Обновляем данные девушки актуальной статистикой
+    const stats = girlStats[girl.id];
+    const updatedGirl = stats ? {
+      ...girl,
+      messagesCount: stats.total_messages,
+      level: stats.relationship_level,
+      unlocked: true
+    } : girl;
+    
+    setSelectedGirl(updatedGirl);
     setShowChat(true);
   };
 
