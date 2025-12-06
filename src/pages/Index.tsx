@@ -613,7 +613,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     Контакты
                   </h3>
                   <div className="grid md:grid-cols-2 gap-3 mb-4">
-                    <a href="mailto:1ilyapetrov@vk.com" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
+                    <a href="mailto:airomance@yandex.ru" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Icon name="Mail" size={18} className="text-white" />
@@ -625,7 +625,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       </div>
                     </a>
 
-                    <a href="https://t.me/petrovboxing" target="_blank" rel="noopener noreferrer" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
+                    <a href="https://t.me/airomance1" target="_blank" rel="noopener noreferrer" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Icon name="MessageCircle" size={18} className="text-white" />
@@ -656,7 +656,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-0.5">Адрес</p>
-                          <p className="text-sm font-semibold">58383948854</p>
+                          <p className="text-sm font-semibold">123298</p>
                         </div>
                       </div>
                     </div>
