@@ -1,9 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { useEffect } from "react";
+import { updatePageMeta } from "@/utils/seo";
 
 const Privacy = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    updatePageMeta(
+      "Политика конфиденциальности — AI Romance",
+      "Политика конфиденциальности сервиса AI Romance. Узнайте, как мы обрабатываем и защищаем ваши персональные данные.",
+      "политика конфиденциальности, защита данных, персональные данные, конфиденциальность"
+    );
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -18,7 +28,7 @@ const Privacy = () => {
         </Button>
 
         <div className="bg-card rounded-lg p-6 md:p-8 shadow-lg">
-          <h1 className="text-3xl font-bold mb-6">Политика конфиденциальности</h1>
+          <h1 className="text-3xl font-bold mb-6" itemProp="headline">Политика конфиденциальности</h1>
           
           <div className="space-y-6 text-card-foreground">
             <section>

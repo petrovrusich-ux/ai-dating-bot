@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import ChatInterface from '@/components/ChatInterface';
 import GirlSelectionModal from '@/components/GirlSelectionModal';
+import { updatePageMeta } from '@/utils/seo';
 
 interface Girl {
   id: string;
@@ -194,6 +195,12 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   };
 
   useEffect(() => {
+    updatePageMeta(
+      "AI Romance — Виртуальные отношения с искусственным интеллектом",
+      "Почувствуй искру между нами! Общайся с уникальными AI-персонажами, выстраивай отношения и получай незабываемые впечатления. Безопасно, анонимно, конфиденциально.",
+      "ai dating, виртуальное общение, ai романтика, чат с ai, виртуальная девушка, ai girlfriend"
+    );
+    
     loadGirlStats(userId);
     loadActiveChats(userId);
   }, [userId]);

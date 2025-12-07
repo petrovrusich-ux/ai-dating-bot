@@ -1,9 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { useEffect } from "react";
+import { updatePageMeta } from "@/utils/seo";
 
 const Offer = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    updatePageMeta(
+      "Публичная оферта — AI Romance",
+      "Публичная оферта сервиса AI Romance. Условия использования сервиса и договор оферты.",
+      "публичная оферта, условия использования, договор, правила сервиса"
+    );
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -18,7 +28,7 @@ const Offer = () => {
         </Button>
 
         <div className="bg-card rounded-lg p-6 md:p-8 shadow-lg">
-          <h1 className="text-3xl font-bold mb-6">Публичная оферта</h1>
+          <h1 className="text-3xl font-bold mb-6" itemProp="headline">Публичная оферта</h1>
           
           <div className="space-y-6 text-card-foreground">
             <section>
