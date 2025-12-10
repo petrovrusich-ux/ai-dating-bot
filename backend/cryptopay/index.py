@@ -111,10 +111,13 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     )
     
     try:
+        print(f'Sending to CryptoBot: {invoice_data}')
         with urlopen(req) as response:
             response_data = json.loads(response.read().decode('utf-8'))
+            print(f'CryptoBot response: {response_data}')
             
             if not response_data.get('ok'):
+                print(f'CryptoBot error: {response_data}')
                 return {
                     'statusCode': 400,
                     'headers': {
@@ -163,6 +166,7 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
     except HTTPError as e:
         error_body = e.read().decode('utf-8')
+        print(f'HTTPError: {e.code} - {error_body}')
         return {
             'statusCode': e.code,
             'headers': {
@@ -171,7 +175,22 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'error': 'Invoice creation failed',
-                'details': error_body
+                'details': error_body,
+                'status_code': e.code
+            }),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'Exception: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'Unexpected error',
+                'details': str(e)
             }),
             'isBase64Encoded': False
         }
