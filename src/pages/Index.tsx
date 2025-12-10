@@ -263,11 +263,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       return;
     }
 
-    console.log('=== PAYMENT START ===', { planType, amount, userId });
     setIsProcessingPayment(true);
     
     try {
-      console.log('Sending request to cryptopay...');
       const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
         method: 'POST',
         headers: {
@@ -280,16 +278,12 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.payment_url) {
-        console.log('Opening payment URL:', data.payment_url);
         window.open(data.payment_url, '_blank');
       } else {
-        console.error('No payment_url in response:', data);
-        alert('Ошибка создания платежа: ' + (data.error || 'Неизвестная ошибка'));
+        alert('Ошибка создания платежа. Попробуйте позже.');
       }
     } catch (error) {
       console.error('Payment error:', error);
