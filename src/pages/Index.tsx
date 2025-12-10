@@ -266,14 +266,14 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     setIsProcessingPayment(true);
     
     try {
-      const response = await fetch('https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0', {
+      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           plan_type: planType,
-          amount: amount,
+          amount_rub: amount,
           user_id: userId,
         }),
       });
@@ -281,7 +281,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       const data = await response.json();
 
       if (data.payment_url) {
-        window.location.href = data.payment_url;
+        window.open(data.payment_url, '_blank');
       } else {
         alert('Ошибка создания платежа. Попробуйте позже.');
       }
@@ -298,14 +298,14 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     setIsProcessingPayment(true);
     
     try {
-      const response = await fetch('https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0', {
+      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           plan_type: selectedPurchaseType,
-          amount: selectedPurchasePrice,
+          amount_rub: selectedPurchasePrice,
           user_id: userId,
           girl_id: girlId,
         }),
@@ -314,7 +314,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       const data = await response.json();
 
       if (data.payment_url) {
-        window.location.href = data.payment_url;
+        window.open(data.payment_url, '_blank');
       } else {
         alert('Ошибка создания платежа. Попробуйте позже.');
       }
