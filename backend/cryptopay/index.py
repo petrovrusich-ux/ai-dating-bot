@@ -3,6 +3,7 @@
 Параметры: event с httpMethod, body содержит plan_type, amount_rub, user_id
           context с атрибутом request_id
 Возвращает: URL для оплаты или ошибку
+Updated: 2025-12-11 - token refresh trigger
 '''
 
 import json
@@ -67,7 +68,9 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
+    # ВРЕМЕННО: хардкод токена для теста
+    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     if not api_token:
         return {
             'statusCode': 500,
@@ -198,7 +201,9 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 def handle_webhook(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     body = event.get('body', '')
     signature = event.get('headers', {}).get('crypto-pay-api-signature')
-    api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
+    # ВРЕМЕННО: хардкод токена для теста
+    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     
     # Проверяем подпись
     secret = hashlib.sha256(api_token.encode()).digest()
