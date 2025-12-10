@@ -88,30 +88,29 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     description = plan_descriptions.get(plan_type, 'AI Romance подписка')
     
-    # Создаем invoice через CryptoBot API
-    invoice_data = {
+    # Создаем invoice через CryptoBot API (используем GET с query params)
+    from urllib.parse import urlencode
+    
+    invoice_params = {
         'asset': 'USDT',
-        'amount': str(amount_rub),  # CryptoBot автоконвертирует по курсу
+        'amount': str(amount_rub),
         'description': description,
         'paid_btn_name': 'viewItem',
         'paid_btn_url': f'{event.get("headers", {}).get("origin", "https://app.example.com")}/payment/success',
         'payload': json.dumps({'user_id': user_id, 'plan_type': plan_type})
     }
     
+    query_string = urlencode(invoice_params)
+    url = f'https://pay.crypt.bot/api/createInvoice?{query_string}'
+    
     headers = {
-        'Crypto-Pay-API-Token': api_token,
-        'Content-Type': 'application/json'
+        'Crypto-Pay-API-Token': api_token
     }
     
-    req = Request(
-        'https://pay.crypt.bot/api/createInvoice',
-        data=json.dumps(invoice_data).encode('utf-8'),
-        headers=headers,
-        method='POST'
-    )
+    req = Request(url, headers=headers, method='GET')
     
     try:
-        print(f'Sending to CryptoBot: {invoice_data}')
+        print(f'Sending to CryptoBot: {url}')
         with urlopen(req) as response:
             response_data = json.loads(response.read().decode('utf-8'))
             print(f'CryptoBot response: {response_data}')
