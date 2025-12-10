@@ -3,6 +3,7 @@
 Параметры: event с httpMethod, body содержит plan_type, amount_rub, user_id
           context с атрибутом request_id
 Возвращает: URL для оплаты или ошибку
+Updated: 2025-12-11 - token refresh trigger
 '''
 
 import json
@@ -67,7 +68,9 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
-    api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
+    # ВРЕМЕННО: хардкод токена для теста
+    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     if not api_token:
         return {
             'statusCode': 500,
@@ -88,33 +91,35 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     description = plan_descriptions.get(plan_type, 'AI Romance подписка')
     
-    # Создаем invoice через CryptoBot API
-    invoice_data = {
+    # Создаем invoice через CryptoBot API (используем GET с query params)
+    from urllib.parse import urlencode
+    
+    invoice_params = {
         'asset': 'USDT',
-        'amount': str(amount_rub),  # CryptoBot автоконвертирует по курсу
+        'amount': str(amount_rub),
         'description': description,
         'paid_btn_name': 'viewItem',
         'paid_btn_url': f'{event.get("headers", {}).get("origin", "https://app.example.com")}/payment/success',
         'payload': json.dumps({'user_id': user_id, 'plan_type': plan_type})
     }
     
+    query_string = urlencode(invoice_params)
+    url = f'https://pay.crypt.bot/api/createInvoice?{query_string}'
+    
     headers = {
-        'Crypto-Pay-API-Token': api_token,
-        'Content-Type': 'application/json'
+        'Crypto-Pay-API-Token': api_token
     }
     
-    req = Request(
-        'https://pay.crypt.bot/api/createInvoice',
-        data=json.dumps(invoice_data).encode('utf-8'),
-        headers=headers,
-        method='POST'
-    )
+    req = Request(url, headers=headers, method='GET')
     
     try:
+        print(f'Sending to CryptoBot: {url}')
         with urlopen(req) as response:
             response_data = json.loads(response.read().decode('utf-8'))
+            print(f'CryptoBot response: {response_data}')
             
             if not response_data.get('ok'):
+                print(f'CryptoBot error: {response_data}')
                 return {
                     'statusCode': 400,
                     'headers': {
@@ -163,6 +168,7 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
     except HTTPError as e:
         error_body = e.read().decode('utf-8')
+        print(f'HTTPError: {e.code} - {error_body}')
         return {
             'statusCode': e.code,
             'headers': {
@@ -171,7 +177,22 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             },
             'body': json.dumps({
                 'error': 'Invoice creation failed',
-                'details': error_body
+                'details': error_body,
+                'status_code': e.code
+            }),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        print(f'Exception: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'Unexpected error',
+                'details': str(e)
             }),
             'isBase64Encoded': False
         }
@@ -180,7 +201,9 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 def handle_webhook(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     body = event.get('body', '')
     signature = event.get('headers', {}).get('crypto-pay-api-signature')
-    api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
+    # ВРЕМЕННО: хардкод токена для теста
+    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     
     # Проверяем подпись
     secret = hashlib.sha256(api_token.encode()).digest()
