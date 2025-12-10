@@ -69,7 +69,7 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     # ВРЕМЕННО: хардкод токена для теста
-    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    api_token = '499562:AA6ESmsKpZgaLEbGGiHfZbZW9lW6sFefbsf'
     # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     if not api_token:
         return {
@@ -81,6 +81,17 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'error': 'CryptoBot API token not configured'}),
             'isBase64Encoded': False
         }
+    
+    # ТЕСТ: проверяем работает ли токен через getMe
+    test_url = 'https://pay.crypt.bot/api/getMe'
+    test_headers = {'Crypto-Pay-API-Token': api_token}
+    test_req = Request(test_url, headers=test_headers, method='GET')
+    try:
+        with urlopen(test_req) as test_response:
+            test_data = json.loads(test_response.read().decode('utf-8'))
+            print(f'getMe response: {test_data}')
+    except Exception as e:
+        print(f'getMe failed: {str(e)}')
     
     plan_descriptions = {
         'flirt': 'Подписка Флирт - 1 неделя',
@@ -204,7 +215,7 @@ def handle_webhook(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     body = event.get('body', '')
     signature = event.get('headers', {}).get('crypto-pay-api-signature')
     # ВРЕМЕННО: хардкод токена для теста
-    api_token = '499519:AArlZTORgms9BUY61Le0JtLlRUR92vJnwbA'
+    api_token = '499562:AA6ESmsKpZgaLEbGGiHfZbZW9lW6sFefbsf'
     # api_token = os.environ.get('CRYPTOBOT_API_TOKEN')
     
     # Проверяем подпись
