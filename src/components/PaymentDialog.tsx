@@ -27,17 +27,24 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
     setIsProcessing(true);
 
     try {
+      console.log('Telegram WebApp:', (window as any).Telegram?.WebApp);
+      console.log('InitData:', (window as any).Telegram?.WebApp?.initDataUnsafe);
+      
       const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      
+      console.log('Telegram ID:', telegramId);
       
       if (!telegramId) {
         toast({
           title: 'Откройте через Telegram',
-          description: 'Платежи работают только в Telegram',
+          description: 'Платежи работают только в Telegram Mini App',
           variant: 'destructive',
         });
         setIsProcessing(false);
         return;
       }
+      
+      console.log('Отправляем запрос на создание invoice...');
       
       const response = await fetch('https://functions.poehali.dev/122dd74d-3f1c-4b2a-945a-96804726401f', {
         method: 'POST',
@@ -48,16 +55,32 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
         }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.invoice_link) {
+        console.log('Открываем invoice:', data.invoice_link);
         (window as any).Telegram?.WebApp?.openInvoice(data.invoice_link, (status: string) => {
+          console.log('Invoice status:', status);
           if (status === 'paid') {
             toast({
               title: 'Оплата успешна!',
               description: 'Тариф активирован',
             });
             window.location.reload();
+          } else if (status === 'cancelled') {
+            toast({
+              title: 'Оплата отменена',
+              description: 'Вы отменили оплату',
+              variant: 'destructive',
+            });
+          } else if (status === 'failed') {
+            toast({
+              title: 'Ошибка оплаты',
+              description: 'Попробуйте еще раз',
+              variant: 'destructive',
+            });
           }
         });
         onClose();
@@ -65,6 +88,7 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
         throw new Error(data.error || 'Ошибка создания счета');
       }
     } catch (error) {
+      console.error('Payment error:', error);
       toast({
         title: 'Ошибка оплаты',
         description: error instanceof Error ? error.message : 'Попробуйте позже',
