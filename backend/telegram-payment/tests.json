@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS request returns CORS headers",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "POST without telegram_id returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "plan_type": "flirt"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "telegram_id required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
