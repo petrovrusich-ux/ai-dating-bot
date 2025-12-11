@@ -27,68 +27,32 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
     setIsProcessing(true);
 
     try {
-      console.log('Telegram WebApp:', (window as any).Telegram?.WebApp);
-      console.log('InitData:', (window as any).Telegram?.WebApp?.initDataUnsafe);
+      const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
       
-      const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      
-      console.log('Telegram ID:', telegramId);
-      
-      if (!telegramId) {
-        toast({
-          title: 'Откройте через Telegram',
-          description: 'Платежи работают только в Telegram Mini App',
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
-        return;
-      }
-      
-      console.log('Отправляем запрос на создание invoice...');
-      
-      const response = await fetch('https://functions.poehali.dev/122dd74d-3f1c-4b2a-945a-96804726401f', {
+      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegram_id: telegramId,
           plan_type: product.planId,
+          amount_rub: product.price,
+          user_id: userId,
         }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
-      if (data.invoice_link) {
-        console.log('Открываем invoice:', data.invoice_link);
-        (window as any).Telegram?.WebApp?.openInvoice(data.invoice_link, (status: string) => {
-          console.log('Invoice status:', status);
-          if (status === 'paid') {
-            toast({
-              title: 'Оплата успешна!',
-              description: 'Тариф активирован',
-            });
-            window.location.reload();
-          } else if (status === 'cancelled') {
-            toast({
-              title: 'Оплата отменена',
-              description: 'Вы отменили оплату',
-              variant: 'destructive',
-            });
-          } else if (status === 'failed') {
-            toast({
-              title: 'Ошибка оплаты',
-              description: 'Попробуйте еще раз',
-              variant: 'destructive',
-            });
-          }
+      if (data.payment_url) {
+        toast({
+          title: 'Переход к оплате',
+          description: 'Сейчас откроется окно CryptoBot для оплаты',
         });
+        
+        window.open(data.payment_url, '_blank');
         onClose();
       } else {
         throw new Error(data.error || 'Ошибка создания счета');
       }
     } catch (error) {
-      console.error('Payment error:', error);
       toast({
         title: 'Ошибка оплаты',
         description: error instanceof Error ? error.message : 'Попробуйте позже',
@@ -129,17 +93,17 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
 
           <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-2">
             <div className="flex items-center gap-2">
-              <Icon name="Star" size={20} className="text-blue-600" />
-              <span className="font-medium text-sm">Оплата через Telegram Stars</span>
+              <Icon name="Wallet" size={20} className="text-blue-600" />
+              <span className="font-medium text-sm">Оплата через CryptoBot</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Быстрая оплата внутри Telegram. Stars можно купить в приложении Telegram.
+              Вы будете перенаправлены в CryptoBot для безопасной оплаты картой в рублях. Конвертация в USDT происходит автоматически.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded">
             <Icon name="Shield" size={16} className="text-primary" />
-            <span>Безопасная оплата через Telegram</span>
+            <span>Безопасная криптооплата через Telegram CryptoBot</span>
           </div>
 
           <div className="flex gap-3">
@@ -155,10 +119,7 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
                   Обработка...
                 </>
               ) : (
-                <>
-                  <Icon name="Star" size={20} className="mr-2" />
-                  Оплатить {product.planId === 'flirt' ? '1 Star' : '2 Stars'}
-                </>
+                `Оплатить ${product.price}₽`
               )}
             </Button>
             <Button onClick={onClose} variant="outline" size="lg">

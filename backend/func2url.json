@@ -1,7 +1,7 @@
 {
-  "telegram-payment": "https://functions.poehali.dev/122dd74d-3f1c-4b2a-945a-96804726401f",
   "cryptopay": "https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9",
   "get-db-url": "https://functions.poehali.dev/66ab0984-546f-4543-8946-e5326778f719",
   "auth": "https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1",
-  "chat": "https://functions.poehali.dev/8dfb1a82-db60-4e1f-85ba-bd3f9678b846"
+  "chat": "https://functions.poehali.dev/8dfb1a82-db60-4e1f-85ba-bd3f9678b846",
+  "payment": "https://functions.poehali.dev/9ca78e26-3409-4acb-8c0c-e9e4e8a9d8d0"
 }

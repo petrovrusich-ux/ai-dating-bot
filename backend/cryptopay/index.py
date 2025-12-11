@@ -94,7 +94,8 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Создаем invoice через CryptoBot API (используем GET с query params)
     from urllib.parse import urlencode
     
-    invoice_params = {
+    # Попробуем POST с JSON телом согласно документации
+    invoice_data = {
         'asset': 'USDT',
         'amount': str(amount_rub),
         'description': description,
@@ -103,14 +104,15 @@ def create_invoice(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         'payload': json.dumps({'user_id': user_id, 'plan_type': plan_type})
     }
     
-    query_string = urlencode(invoice_params)
-    url = f'https://pay.crypt.bot/api/createInvoice?{query_string}'
+    url = 'https://pay.crypt.bot/api/createInvoice'
     
     headers = {
-        'Crypto-Pay-API-Token': api_token
+        'Crypto-Pay-API-Token': api_token,
+        'Content-Type': 'application/json'
     }
     
-    req = Request(url, headers=headers, method='GET')
+    body = json.dumps(invoice_data).encode('utf-8')
+    req = Request(url, data=body, headers=headers, method='POST')
     
     try:
         print(f'Sending to CryptoBot: {url}')
