@@ -52,7 +52,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'flirt': 490,
             'intimate': 1490,
             'one_girl': 399,
-            'all_girls_day': 799
+            'all_girls': 799,
+            'all_girls_day': 799,
+            'one_girl_day': 799
         }
         amount = prices.get(plan_type, 500)
         print(f'DEBUG: Price for {plan_type} = {amount}')
