@@ -35,26 +35,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
         body_data = json.loads(event.get('body', '{}'))
         
+        # Логируем все данные от Platega для отладки
+        print(f'DEBUG WEBHOOK: Full body_data = {json.dumps(body_data)}')
+        print(f'DEBUG WEBHOOK: All keys = {list(body_data.keys())}')
+        
         # Platega отправляет данные о транзакции
-        transaction_id = body_data.get('transaction_id')
-        status = body_data.get('status')
-        order_id = body_data.get('order_id')
+        transaction_id = body_data.get('transaction_id') or body_data.get('transactionId')
+        status = body_data.get('status') or body_data.get('transactionStatus')
+        order_id = body_data.get('order_id') or body_data.get('payload')
+        
+        print(f'DEBUG WEBHOOK: transaction_id={transaction_id}, status={status}, order_id={order_id}')
         
         if not all([transaction_id, status, order_id]):
+            print(f'DEBUG WEBHOOK: Missing fields! transaction_id={transaction_id}, status={status}, order_id={order_id}')
             return {
                 'statusCode': 400,
                 'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
-                'body': json.dumps({'error': 'Missing required fields'}),
+                'body': json.dumps({'error': 'Missing required fields', 'received': body_data}),
                 'isBase64Encoded': False
             }
         
         # Если платёж успешен
-        if status == 'success' or status == 'completed':
+        if status in ['success', 'completed', 'COMPLETED', 'SUCCESS']:
+            print(f'DEBUG WEBHOOK: Payment successful! Processing order_id={order_id}')
             # Парсим order_id (формат: user_id_plan_type_request_id)
             parts = order_id.split('_')
+            print(f'DEBUG WEBHOOK: Parsed parts = {parts}')
             if len(parts) >= 2:
                 user_id = parts[0]
                 plan_type = parts[1]
+                print(f'DEBUG WEBHOOK: user_id={user_id}, plan_type={plan_type}')
                 
                 # Подключаемся к БД и активируем подписку
                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -62,6 +72,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 try:
                     # Обновляем или создаём подписку
+                    print(f'DEBUG WEBHOOK: Activating {plan_type} for user {user_id}')
                     if plan_type == 'flirt':
                         cur.execute('''
                             INSERT INTO t_p77610913_ai_dating_bot.user_subscriptions (user_id, flirt, updated_at)
@@ -92,6 +103,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         ''', (user_id,))
                     
                     conn.commit()
+                    print(f'DEBUG WEBHOOK: Successfully activated subscription!')
                     
                     return {
                         'statusCode': 200,
@@ -103,6 +115,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 finally:
                     cur.close()
                     conn.close()
+            else:
+                print(f'DEBUG WEBHOOK: Not enough parts in order_id: {parts}')
+        else:
+            print(f'DEBUG WEBHOOK: Payment status is not successful: {status}')
         
         # Для других статусов просто подтверждаем получение
         return {
