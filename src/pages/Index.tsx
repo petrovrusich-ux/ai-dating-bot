@@ -201,6 +201,16 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       "ai dating, виртуальное общение, ai романтика, чат с ai, виртуальная девушка, ai girlfriend"
     );
     
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      setTimeout(() => {
+        checkSubscription(userId);
+        window.history.replaceState({}, '', '/');
+      }, 1000);
+    }
+    
     loadGirlStats(userId);
     loadActiveChats(userId);
   }, [userId]);

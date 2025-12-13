@@ -29,26 +29,19 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
     try {
       const userId = localStorage.getItem('user_id') || 'user_' + Date.now();
       
-      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
+      const response = await fetch('https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan_type: product.planId,
-          amount_rub: product.price,
           user_id: userId,
+          plan_type: product.planId,
         }),
       });
 
       const data = await response.json();
 
       if (data.payment_url) {
-        toast({
-          title: 'Переход к оплате',
-          description: 'Сейчас откроется окно CryptoBot для оплаты',
-        });
-        
-        window.open(data.payment_url, '_blank');
-        onClose();
+        window.location.href = data.payment_url;
       } else {
         throw new Error(data.error || 'Ошибка создания счета');
       }
@@ -58,7 +51,6 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
         description: error instanceof Error ? error.message : 'Попробуйте позже',
         variant: 'destructive',
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -93,17 +85,17 @@ const PaymentDialog = ({ open, onClose, product }: PaymentDialogProps) => {
 
           <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-2">
             <div className="flex items-center gap-2">
-              <Icon name="Wallet" size={20} className="text-blue-600" />
-              <span className="font-medium text-sm">Оплата через CryptoBot</span>
+              <Icon name="CreditCard" size={20} className="text-blue-600" />
+              <span className="font-medium text-sm">Оплата через Platega</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Вы будете перенаправлены в CryptoBot для безопасной оплаты картой в рублях. Конвертация в USDT происходит автоматически.
+              Безопасная оплата картой или СБП. Все способы оплаты доступны на следующем шаге.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded">
             <Icon name="Shield" size={16} className="text-primary" />
-            <span>Безопасная криптооплата через Telegram CryptoBot</span>
+            <span>Безопасная оплата через платёжную систему Platega</span>
           </div>
 
           <div className="flex gap-3">
