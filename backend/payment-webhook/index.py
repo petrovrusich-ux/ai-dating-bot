@@ -39,14 +39,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         print(f'DEBUG WEBHOOK: Full body_data = {json.dumps(body_data)}')
         print(f'DEBUG WEBHOOK: All keys = {list(body_data.keys())}')
         
-        # Platega отправляет данные о транзакции
-        transaction_id = body_data.get('transaction_id') or body_data.get('transactionId')
+        # Platega отправляет: id, status (CONFIRMED), payload
+        transaction_id = body_data.get('id') or body_data.get('transaction_id') or body_data.get('transactionId')
         status = body_data.get('status') or body_data.get('transactionStatus')
-        order_id = body_data.get('order_id') or body_data.get('payload')
+        order_id = body_data.get('payload') or body_data.get('order_id')
         
         print(f'DEBUG WEBHOOK: transaction_id={transaction_id}, status={status}, order_id={order_id}')
         
-        if not all([transaction_id, status, order_id]):
+        if not status or not order_id:
             print(f'DEBUG WEBHOOK: Missing fields! transaction_id={transaction_id}, status={status}, order_id={order_id}')
             return {
                 'statusCode': 400,
@@ -55,8 +55,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Если платёж успешен
-        if status in ['success', 'completed', 'COMPLETED', 'SUCCESS']:
+        # Если платёж успешен (CONFIRMED - это успешная оплата в Platega)
+        if status in ['success', 'completed', 'COMPLETED', 'SUCCESS', 'CONFIRMED']:
             print(f'DEBUG WEBHOOK: Payment successful! Processing order_id={order_id}')
             # Парсим order_id (формат: user_id_plan_type_request_id)
             parts = order_id.split('_')
