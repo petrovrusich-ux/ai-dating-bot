@@ -332,20 +332,20 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             if end_date and end_date > datetime.now():
                 result['flirt'] = flirt_flag
                 result['intimate'] = intimate_flag
+                result['has_subscription'] = True
+                result['subscription_end'] = end_date.isoformat()
             else:
                 result['flirt'] = False
                 result['intimate'] = False
         
         cur.execute(
-            "SELECT subscription_type, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE AND end_date > CURRENT_TIMESTAMP ORDER BY end_date DESC LIMIT 1",
+            "SELECT subscription_type FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE ORDER BY end_date DESC LIMIT 1",
             (user_id,)
         )
         subscription = cur.fetchone()
         
         if subscription:
-            result['has_subscription'] = True
             result['subscription_type'] = subscription[0]
-            result['subscription_end'] = subscription[1].isoformat()
         
         cur.execute("SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s", (user_id,))
         purchases = cur.fetchall()

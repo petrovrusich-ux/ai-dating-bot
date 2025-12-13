@@ -372,11 +372,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {mockGirls.map((girl) => {
                 const stats = girlStats[girl.id];
-                const maxAllowedLevel = getMaxAllowedLevel(userSubscription);
                 const actualLevel = stats ? stats.relationship_level : girl.level;
-                const displayLevel = Math.min(actualLevel, maxAllowedLevel);
                 const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                const levelInfo = getLevelInfo(displayLevel, displayMessagesCount);
+                const levelInfo = getLevelInfo(actualLevel, displayMessagesCount);
                 return (
                   <Card
                     key={girl.id}
@@ -457,11 +455,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
               ) : (
                 activeChats.map((girl) => {
                   const stats = girlStats[girl.id];
-                  const maxAllowedLevel = getMaxAllowedLevel(userSubscription);
                   const actualLevel = stats ? stats.relationship_level : girl.level;
-                  const displayLevel = Math.min(actualLevel, maxAllowedLevel);
                   const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                  const levelInfo = getLevelInfo(displayLevel, displayMessagesCount);
+                  const levelInfo = getLevelInfo(actualLevel, displayMessagesCount);
                   return (
                     <Card
                       key={girl.id}
@@ -554,7 +550,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                             {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
                           </Badge>
                         </div>
-                        {userSubscription.subscription_end && (
+                        {userSubscription.subscription_end && userSubscription.subscription_end.trim() !== '' && (
                           <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
                             <span className="text-sm font-medium text-muted-foreground">Действует до:</span>
                             <span className="text-sm font-semibold">
