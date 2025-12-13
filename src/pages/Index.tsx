@@ -273,38 +273,30 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       return;
     }
 
-    console.log('=== PAYMENT START ===', { planType, amount, userId });
     setIsProcessingPayment(true);
     
     try {
-      console.log('Sending request to cryptopay...');
-      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
+      const response = await fetch('https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plan_type: planType,
-          amount_rub: amount,
           user_id: userId,
+          plan_type: planType,
         }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.payment_url) {
-        console.log('Opening payment URL:', data.payment_url);
-        window.open(data.payment_url, '_blank');
+        window.location.href = data.payment_url;
       } else {
-        console.error('No payment_url in response:', data);
         alert('Ошибка создания платежа: ' + (data.error || 'Неизвестная ошибка'));
       }
     } catch (error) {
       console.error('Payment error:', error);
       alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
-    } finally {
       setIsProcessingPayment(false);
     }
   };
@@ -314,30 +306,27 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     setIsProcessingPayment(true);
     
     try {
-      const response = await fetch('https://functions.poehali.dev/f302a340-c08c-4600-bf8d-28cb6d2179c9', {
+      const response = await fetch('https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plan_type: selectedPurchaseType,
-          amount_rub: selectedPurchasePrice,
           user_id: userId,
-          girl_id: girlId,
+          plan_type: selectedPurchaseType,
         }),
       });
 
       const data = await response.json();
 
       if (data.payment_url) {
-        window.open(data.payment_url, '_blank');
+        window.location.href = data.payment_url;
       } else {
         alert('Ошибка создания платежа. Попробуйте позже.');
       }
     } catch (error) {
       console.error('Payment error:', error);
       alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
-    } finally {
       setIsProcessingPayment(false);
     }
   };
