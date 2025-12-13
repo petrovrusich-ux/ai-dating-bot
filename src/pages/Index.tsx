@@ -761,7 +761,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       Флирт
                     </h3>
                     <div className="mb-6">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">490 ₽</span>
+                      <span className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">20 ₽</span>
                       <span className="text-muted-foreground text-lg"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
@@ -793,7 +793,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     <Button 
                       className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
                       size="lg"
-                      onClick={() => handleSubscribe('flirt', 490)}
+                      onClick={() => handleSubscribe('flirt', 20)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
                       {isProcessingPayment ? '⏳ Обработка...' : '💕 Подключить тариф'}
@@ -817,7 +817,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       Интим
                     </h3>
                     <div className="mb-6">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">1490 ₽</span>
+                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">20 ₽</span>
                       <span className="text-muted-foreground text-lg"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
@@ -849,7 +849,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     <Button 
                       className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
                       size="lg"
-                      onClick={() => handleSubscribe('intimate', 1490)}
+                      onClick={() => handleSubscribe('intimate', 20)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
                       {isProcessingPayment ? '⏳ Обработка...' : '🔥 Подключить тариф'}
@@ -864,17 +864,17 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     Разовые покупки
                   </h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('one_girl', 399)}>
+                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('one_girl', 20)}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">Одна девушка на 24 часа</span>
-                        <Badge>399₽</Badge>
+                        <Badge>20₽</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">Режим интим с одной девушкой на выбор ровно на сутки</p>
                     </div>
-                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('all_girls', 799)}>
+                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('all_girls', 20)}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">Все девушки на 1 день</span>
-                        <Badge>799₽</Badge>
+                        <Badge>20₽</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">Режим интим со всеми девушками на 24 часа</p>
                     </div>

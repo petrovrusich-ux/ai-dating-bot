@@ -47,16 +47,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Определяем сумму в зависимости от плана (тестовые цены 100₽)
+        # Определяем сумму в зависимости от плана (тестовые цены 20₽)
         prices = {
-            'flirt': 100,
-            'intimate': 100,
-            'one_girl': 100,
-            'all_girls': 100,
-            'all_girls_day': 100,
-            'one_girl_day': 100
+            'flirt': 20,
+            'intimate': 20,
+            'one_girl': 20,
+            'all_girls': 20,
+            'all_girls_day': 20,
+            'one_girl_day': 20
         }
-        amount = prices.get(plan_type, 500)
+        amount = prices.get(plan_type, 20)
         print(f'DEBUG: Price for {plan_type} = {amount}')
         
         merchant_id = os.environ['PLATEGA_MERCHANT_ID']
