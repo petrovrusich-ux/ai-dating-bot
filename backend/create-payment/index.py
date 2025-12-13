@@ -37,6 +37,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         user_id: str = body_data.get('user_id')
         plan_type: str = body_data.get('plan_type')
         
+        print(f'DEBUG: Received plan_type={plan_type}, user_id={user_id}')
+        
         if not user_id or not plan_type:
             return {
                 'statusCode': 400,
@@ -53,6 +55,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'all_girls_day': 799
         }
         amount = prices.get(plan_type, 500)
+        print(f'DEBUG: Price for {plan_type} = {amount}')
         
         merchant_id = os.environ['PLATEGA_MERCHANT_ID']
         api_key = os.environ['PLATEGA_API_KEY']
