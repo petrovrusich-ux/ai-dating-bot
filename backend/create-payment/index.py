@@ -77,8 +77,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'currency': 'RUB'
             },
             'description': f'Подписка {plan_type}',
-            'return': f'https://preview.poehali.dev/?payment=success&plan={plan_type}&user={user_id}',
-            'failedUrl': 'https://preview.poehali.dev/?payment=failed',
+            'return': f'https://airomance.ru/?payment=success&plan={plan_type}&user={user_id}',
+            'failedUrl': 'https://airomance.ru/?payment=failed',
             'payload': f'{user_id}_{plan_type}_{context.request_id}'
         }
         

@@ -61,30 +61,34 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur = conn.cursor()
                 
                 try:
-                    # Создаём таблицу подписок если её нет
-                    cur.execute('''
-                        CREATE TABLE IF NOT EXISTS user_subscriptions (
-                            user_id VARCHAR(255) PRIMARY KEY,
-                            flirt BOOLEAN DEFAULT FALSE,
-                            intimate BOOLEAN DEFAULT FALSE,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    ''')
-                    
                     # Обновляем или создаём подписку
                     if plan_type == 'flirt':
                         cur.execute('''
-                            INSERT INTO user_subscriptions (user_id, flirt, updated_at)
+                            INSERT INTO t_p77610913_ai_dating_bot.user_subscriptions (user_id, flirt, updated_at)
                             VALUES (%s, TRUE, CURRENT_TIMESTAMP)
                             ON CONFLICT (user_id)
                             DO UPDATE SET flirt = TRUE, updated_at = CURRENT_TIMESTAMP
                         ''', (user_id,))
                     elif plan_type == 'intimate':
                         cur.execute('''
-                            INSERT INTO user_subscriptions (user_id, intimate, updated_at)
+                            INSERT INTO t_p77610913_ai_dating_bot.user_subscriptions (user_id, intimate, updated_at)
                             VALUES (%s, TRUE, CURRENT_TIMESTAMP)
                             ON CONFLICT (user_id)
                             DO UPDATE SET intimate = TRUE, updated_at = CURRENT_TIMESTAMP
+                        ''', (user_id,))
+                    elif plan_type in ['one_girl', 'one_girl_day']:
+                        cur.execute('''
+                            INSERT INTO t_p77610913_ai_dating_bot.user_subscriptions (user_id, one_girl, one_girl_expires_at, updated_at)
+                            VALUES (%s, TRUE, CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
+                            ON CONFLICT (user_id)
+                            DO UPDATE SET one_girl = TRUE, one_girl_expires_at = CURRENT_TIMESTAMP + INTERVAL '1 day', updated_at = CURRENT_TIMESTAMP
+                        ''', (user_id,))
+                    elif plan_type in ['all_girls', 'all_girls_day']:
+                        cur.execute('''
+                            INSERT INTO t_p77610913_ai_dating_bot.user_subscriptions (user_id, all_girls, all_girls_expires_at, updated_at)
+                            VALUES (%s, TRUE, CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
+                            ON CONFLICT (user_id)
+                            DO UPDATE SET all_girls = TRUE, all_girls_expires_at = CURRENT_TIMESTAMP + INTERVAL '1 day', updated_at = CURRENT_TIMESTAMP
                         ''', (user_id,))
                     
                     conn.commit()
