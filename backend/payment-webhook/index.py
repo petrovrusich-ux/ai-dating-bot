@@ -80,7 +80,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     
                     if plan_type == 'flirt':
                         if exists:
-                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL ''7 days'' WHERE user_id = %s', (user_id,))
+                            cur.execute("UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL '7 days' WHERE user_id = %s", (user_id,))
                         else:
                             cur.execute('''
                                 INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
@@ -89,7 +89,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             ''', (user_id,))
                     elif plan_type == 'intimate':
                         if exists:
-                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET intimate = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL ''7 days'' WHERE user_id = %s', (user_id,))
+                            cur.execute("UPDATE t_p77610913_ai_dating_bot.subscriptions SET intimate = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL '7 days' WHERE user_id = %s", (user_id,))
                         else:
                             cur.execute('''
                                 INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
