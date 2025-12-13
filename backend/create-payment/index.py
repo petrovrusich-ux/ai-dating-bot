@@ -46,7 +46,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         # Определяем сумму в зависимости от плана
-        amount = 250 if plan_type == 'flirt' else 500
+        prices = {
+            'flirt': 490,
+            'intimate': 1490,
+            'one_girl': 399,
+            'all_girls_day': 799
+        }
+        amount = prices.get(plan_type, 500)
         
         merchant_id = os.environ['PLATEGA_MERCHANT_ID']
         api_key = os.environ['PLATEGA_API_KEY']
