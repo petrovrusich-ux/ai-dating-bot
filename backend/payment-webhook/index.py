@@ -74,18 +74,28 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     # Обновляем подписку в правильной таблице (subscriptions, не user_subscriptions)
                     print(f'DEBUG WEBHOOK: Activating {plan_type} for user {user_id}')
                     
+                    # Проверяем, есть ли запись для пользователя
+                    cur.execute('SELECT id FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s', (user_id,))
+                    exists = cur.fetchone()
+                    
                     if plan_type == 'flirt':
-                        cur.execute('''
-                            UPDATE t_p77610913_ai_dating_bot.subscriptions 
-                            SET flirt = TRUE 
-                            WHERE user_id = %s
-                        ''', (user_id,))
+                        if exists:
+                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = TRUE WHERE user_id = %s', (user_id,))
+                        else:
+                            cur.execute('''
+                                INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
+                                (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
+                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP)
+                            ''', (user_id,))
                     elif plan_type == 'intimate':
-                        cur.execute('''
-                            UPDATE t_p77610913_ai_dating_bot.subscriptions 
-                            SET intimate = TRUE 
-                            WHERE user_id = %s
-                        ''', (user_id,))
+                        if exists:
+                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET intimate = TRUE WHERE user_id = %s', (user_id,))
+                        else:
+                            cur.execute('''
+                                INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
+                                (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
+                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE, FALSE, TRUE, FALSE, CURRENT_TIMESTAMP)
+                            ''', (user_id,))
                     elif plan_type in ['one_girl', 'one_girl_day']:
                         cur.execute('''
                             INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, created_at)
