@@ -18,6 +18,8 @@ def get_db_connection():
     return psycopg2.connect(database_url)
 
 def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str, Any]:
+    from datetime import datetime
+    
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -30,13 +32,23 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
         total_messages = result[0] if result else 0
         
         cur.execute(
-            "SELECT flirt, intimate FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
+            "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
             (user_id,)
         )
         subscription = cur.fetchone()
         
-        has_flirt = subscription[0] if subscription else False
-        has_intimate = subscription[1] if subscription else False
+        has_flirt = False
+        has_intimate = False
+        
+        if subscription:
+            flirt_flag = subscription[0]
+            intimate_flag = subscription[1]
+            end_date = subscription[2]
+            
+            # Проверяем, что подписка не истекла
+            if end_date and end_date > datetime.now():
+                has_flirt = flirt_flag or False
+                has_intimate = intimate_flag or False
         
         cur.execute(
             "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",

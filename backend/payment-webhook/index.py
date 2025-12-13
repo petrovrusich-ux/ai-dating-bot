@@ -80,21 +80,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     
                     if plan_type == 'flirt':
                         if exists:
-                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = TRUE WHERE user_id = %s', (user_id,))
+                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL ''7 days'' WHERE user_id = %s', (user_id,))
                         else:
                             cur.execute('''
                                 INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
                                 (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
-                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP)
+                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days', TRUE, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP)
                             ''', (user_id,))
                     elif plan_type == 'intimate':
                         if exists:
-                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET intimate = TRUE WHERE user_id = %s', (user_id,))
+                            cur.execute('UPDATE t_p77610913_ai_dating_bot.subscriptions SET intimate = TRUE, end_date = CURRENT_TIMESTAMP + INTERVAL ''7 days'' WHERE user_id = %s', (user_id,))
                         else:
                             cur.execute('''
                                 INSERT INTO t_p77610913_ai_dating_bot.subscriptions 
                                 (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
-                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE, FALSE, TRUE, FALSE, CURRENT_TIMESTAMP)
+                                VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days', TRUE, FALSE, TRUE, FALSE, CURRENT_TIMESTAMP)
                             ''', (user_id,))
                     elif plan_type in ['one_girl', 'one_girl_day']:
                         cur.execute('''

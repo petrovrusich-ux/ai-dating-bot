@@ -318,14 +318,23 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         cur = conn.cursor()
         
         cur.execute(
-            "SELECT flirt, intimate FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s",
+            "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s",
             (user_id,)
         )
         subscription_features = cur.fetchone()
         
         if subscription_features:
-            result['flirt'] = subscription_features[0] or False
-            result['intimate'] = subscription_features[1] or False
+            flirt_flag = subscription_features[0] or False
+            intimate_flag = subscription_features[1] or False
+            end_date = subscription_features[2]
+            
+            # Проверяем, что подписка не истекла
+            if end_date and end_date > datetime.now():
+                result['flirt'] = flirt_flag
+                result['intimate'] = intimate_flag
+            else:
+                result['flirt'] = False
+                result['intimate'] = False
         
         cur.execute(
             "SELECT subscription_type, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE AND end_date > CURRENT_TIMESTAMP ORDER BY end_date DESC LIMIT 1",
@@ -379,6 +388,12 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         if active_purchases:
             result['purchase_type'] = active_purchases[0][0]
             result['purchase_expires'] = active_purchases[0][2].isoformat()
+            
+            # Активируем режимы для разовых покупок
+            if result['purchase_type'] == 'all_girls':
+                result['intimate'] = True  # Все девушки на 24 часа = доступ к Интиму
+            elif result['purchase_type'] == 'one_girl':
+                result['intimate'] = True  # Одна девушка на 24 часа = доступ к Интиму
         
         if result['intimate'] or has_active_purchase:
             result['message_limit'] = None

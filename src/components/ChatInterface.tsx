@@ -115,13 +115,22 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   };
 
   const maxAllowedLevel = getMaxAllowedLevel();
-  const initialLevel = Math.min(girl.level, maxAllowedLevel);
+  // Используем максимальный доступный уровень на основе подписки, игнорируя girl.level
+  const initialLevel = maxAllowedLevel;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [inputValue, setInputValue] = useState('');
 
   const [currentLevel, setCurrentLevel] = useState(initialLevel);
+
+  // Обновляем уровень при изменении подписки
+  useEffect(() => {
+    const newMaxLevel = getMaxAllowedLevel();
+    if (newMaxLevel > currentLevel) {
+      setCurrentLevel(newMaxLevel);
+    }
+  }, [userSubscription.flirt, userSubscription.intimate]);
   const [currentMessagesCount, setCurrentMessagesCount] = useState(girl.messagesCount);
   const [showNSFWWarning, setShowNSFWWarning] = useState(false);
 
@@ -176,9 +185,9 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
             id: '1',
             sender: 'ai',
             text:
-              girl.level === 0
+              maxAllowedLevel === 0
                 ? 'Привет! Я рада, что ты решил познакомиться со мной 😊'
-                : girl.level === 1
+                : maxAllowedLevel === 1
                 ? 'Привет снова! Я скучала... 💕'
                 : 'Привет, любимый... Я так ждала тебя 🔥',
             timestamp: new Date(),
@@ -216,7 +225,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       if (userSubscription.flirt && maxAllowedLevel >= 1) {
         setCurrentLevel(1);
 
-        addSystemMessage('🎉 Новый уровень! Теперь доступна функция "Две персоны"');
+        addSystemMessage('🎉 Новый уровень!');
       } else {
         setShowNSFWWarning(true);
       }
@@ -583,10 +592,12 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                     <div className="flex items-start gap-3">
                       <Icon name="Lock" size={20} className="text-destructive mt-0.5" />
                       <div className="flex-1">
-                        <h4 className="font-semibold mb-2">🔒 NSFW контент заблокирован</h4>
+                        <h4 className="font-semibold mb-2">🔒 {userSubscription.flirt ? 'Достигнут лимит сообщений' : 'NSFW контент заблокирован'}</h4>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Вы достигли максимального уровня близости, но для доступа к интимному контенту
-                          необходима подписка
+                          {userSubscription.flirt 
+                            ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим". Либо дождитесь обновления лимита — на тарифе "Флирт" дается 50 сообщений в день.'
+                            : 'Вы достигли максимального уровня близости, но для доступа к интимному контенту необходима подписка'
+                          }
                         </p>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={onClose}>
