@@ -230,6 +230,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       }, 1000);
     }
     
+    checkSubscription(userId);
     loadGirlStats(userId);
     loadActiveChats(userId);
   }, [userId]);
