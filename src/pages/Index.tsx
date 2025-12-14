@@ -131,6 +131,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     subscription_end?: string;
     purchase_expires?: string;
     purchase_type?: string;
+    purchased_girls?: string[];
+    has_all_girls?: boolean;
   }>(userData?.subscription || { flirt: false, intimate: false });
   const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
@@ -155,6 +157,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         subscription_end: data.subscription_end,
         purchase_expires: data.purchase_expires,
         purchase_type: data.purchase_type,
+        purchased_girls: data.purchased_girls || [],
+        has_all_girls: data.has_all_girls || false,
       });
       
       return data;
@@ -236,7 +240,16 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   }, [userId]);
 
   const handleOpenChat = async (girl: Girl) => {
-    await checkSubscription(userId);
+    const subData = await checkSubscription(userId);
+    
+    // Проверяем доступ к девушке для покупки "одна девушка"
+    if (subData.purchase_type === 'one_girl' && !subData.has_all_girls) {
+      const purchasedGirls = subData.purchased_girls || [];
+      if (!purchasedGirls.includes(girl.id)) {
+        alert('Эта девушка недоступна. Вы купили доступ к другой девушке.');
+        return;
+      }
+    }
     
     // Обновляем данные девушки актуальной статистикой
     const stats = girlStats[girl.id];
