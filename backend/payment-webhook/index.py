@@ -107,6 +107,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                                 (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
                                 VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days', TRUE, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP)
                             ''', (user_id,))
+                        # Сбрасываем таймер при покупке тарифа
+                        cur.execute("""
+                            UPDATE t_p77610913_ai_dating_bot.user_message_stats 
+                            SET limit_reset_time = NULL
+                            WHERE user_id = %s
+                        """, (user_id,))
                     elif plan_type == 'intimate':
                         if exists:
                             cur.execute("""
@@ -124,6 +130,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                                 (user_id, subscription_type, start_date, end_date, is_active, flirt, intimate, premium, created_at)
                                 VALUES (%s, 'paid', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days', TRUE, FALSE, TRUE, FALSE, CURRENT_TIMESTAMP)
                             ''', (user_id,))
+                        # Сбрасываем таймер при покупке тарифа
+                        cur.execute("""
+                            UPDATE t_p77610913_ai_dating_bot.user_message_stats 
+                            SET limit_reset_time = NULL
+                            WHERE user_id = %s
+                        """, (user_id,))
                     elif plan_type in ['one_girl', 'one_girl_day']:
                         cur.execute('''
                             INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, girl_id, expires_at, purchased_at)

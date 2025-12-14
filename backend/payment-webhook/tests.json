@@ -22,8 +22,12 @@
       },
       "expectedStatus": 400,
       "expectedBody": {
-        "error": "Missing required fields"
-      }
+        "error": "Missing required fields",
+        "received": {
+          "transaction_id": "string"
+        }
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }
