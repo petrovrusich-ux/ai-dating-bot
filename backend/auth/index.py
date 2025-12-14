@@ -388,9 +388,13 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         active_purchases = cur.fetchall()
         has_active_purchase = len(active_purchases) > 0
         
+        print(f'DEBUG CHECK_SUB: user={user_id}, active_purchases={active_purchases}, count={len(active_purchases)}')
+        
         if active_purchases:
             result['purchase_type'] = active_purchases[0][0]
             result['purchase_expires'] = active_purchases[0][2].isoformat()
+            
+            print(f'DEBUG CHECK_SUB: Activating {result["purchase_type"]}, setting intimate=True')
             
             # Активируем режимы для разовых покупок
             if result['purchase_type'] == 'all_girls':
@@ -408,9 +412,12 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             result['message_limit'] = 20
             result['can_send_message'] = result['total_messages'] < 20
         
+        print(f'DEBUG CHECK_SUB: Final result = {result}')
+        
         cur.close()
         conn.close()
-    except:
+    except Exception as e:
+        print(f'DEBUG CHECK_SUB ERROR: {str(e)}')
         pass
     
     return success_response(result)
