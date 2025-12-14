@@ -369,7 +369,7 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             total_messages = message_stats[0]
             last_reset = message_stats[1]
             
-            if last_reset and last_reset.date() < datetime.now().date():
+            if last_reset and last_reset < datetime.now().date():
                 cur.execute(
                     "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, last_reset_date = CURRENT_DATE WHERE user_id = %s",
                     (user_id,)
