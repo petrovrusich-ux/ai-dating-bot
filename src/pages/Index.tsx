@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import ChatInterface from '@/components/ChatInterface';
 import GirlSelectionModal from '@/components/GirlSelectionModal';
+import GirlAccessDeniedDialog from '@/components/GirlAccessDeniedDialog';
 import { updatePageMeta } from '@/utils/seo';
 
 interface Girl {
@@ -140,6 +141,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const [showGirlSelection, setShowGirlSelection] = useState(false);
   const [selectedPurchaseType, setSelectedPurchaseType] = useState<'one_girl' | 'all_girls'>('one_girl');
   const [selectedPurchasePrice, setSelectedPurchasePrice] = useState(0);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [deniedGirlId, setDeniedGirlId] = useState<string>('');
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -246,7 +249,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     if (subData.purchase_type === 'one_girl' && !subData.has_all_girls) {
       const purchasedGirls = subData.purchased_girls || [];
       if (!purchasedGirls.includes(girl.id)) {
-        alert('Эта девушка недоступна. Вы купили доступ к другой девушке.');
+        setDeniedGirlId(girl.id);
+        setShowAccessDenied(true);
         return;
       }
     }
@@ -262,6 +266,22 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     
     setSelectedGirl(updatedGirl);
     setShowChat(true);
+  };
+
+  const handleBuyAllGirls = async () => {
+    setShowAccessDenied(false);
+    await handleSubscribe('all_girls', 20);
+  };
+
+  const handleGoToPurchasedGirl = () => {
+    setShowAccessDenied(false);
+    const purchasedGirlId = userSubscription.purchased_girls?.[0];
+    if (purchasedGirlId) {
+      const girl = mockGirls.find(g => g.id === purchasedGirlId);
+      if (girl) {
+        handleOpenChat(girl);
+      }
+    }
   };
 
   const handleCloseChat = () => {
@@ -933,6 +953,14 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         onSelectGirl={handleGirlSelect}
         purchaseType={selectedPurchaseType}
         price={selectedPurchasePrice}
+      />
+
+      <GirlAccessDeniedDialog
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        purchasedGirlName={mockGirls.find(g => g.id === userSubscription.purchased_girls?.[0])?.name || 'выбранной девушке'}
+        onBuyAllGirls={handleBuyAllGirls}
+        onGoToPurchasedGirl={handleGoToPurchasedGirl}
       />
     </div>
   );
