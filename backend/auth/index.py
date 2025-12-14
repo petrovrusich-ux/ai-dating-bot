@@ -335,8 +335,15 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
                 result['has_subscription'] = True
                 result['subscription_end'] = end_date.isoformat()
             else:
+                # Если тариф истек - отключаем флаги в БД и возвращаем False
                 result['flirt'] = False
                 result['intimate'] = False
+                if flirt_flag or intimate_flag:
+                    cur.execute(
+                        "UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = FALSE, intimate = FALSE, is_active = FALSE WHERE user_id = %s",
+                        (user_id,)
+                    )
+                    conn.commit()
         
         cur.execute(
             "SELECT subscription_type FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE ORDER BY end_date DESC LIMIT 1",
