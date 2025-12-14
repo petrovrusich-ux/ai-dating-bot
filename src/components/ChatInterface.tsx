@@ -142,6 +142,23 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
 
+  // Проверяем лимит сразу при монтировании компонента
+  useEffect(() => {
+    const totalMessages = userSubscription.total_messages || 0;
+    
+    // Режим "Знакомство" - лимит 20 сообщений
+    if (totalMessages >= 20 && !userSubscription.flirt && !userSubscription.intimate) {
+      setShowNSFWWarning(true);
+      setIsBlocked(true);
+    }
+    
+    // Режим "Флирт" - лимит 50 сообщений
+    if (totalMessages >= 50 && userSubscription.flirt && !userSubscription.intimate) {
+      setShowNSFWWarning(true);
+      setIsBlocked(true);
+    }
+  }, []);
+
   useEffect(() => {
     const loadHistory = async () => {
       try {
@@ -221,20 +238,31 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   }, [messages]);
 
   useEffect(() => {
+    // Проверяем лимит на основе глобального счетчика total_messages
+    const totalMessages = userSubscription.total_messages || 0;
+    
+    // Режим "Знакомство" - лимит 20 сообщений
+    if (totalMessages >= 20 && currentLevel === 0 && !userSubscription.flirt && !userSubscription.intimate) {
+      setShowNSFWWarning(true);
+      setIsBlocked(true);
+    }
+    
+    // Режим "Флирт" - лимит 50 сообщений
+    if (totalMessages >= 50 && currentLevel === 1 && userSubscription.flirt && !userSubscription.intimate) {
+      setShowNSFWWarning(true);
+      setIsBlocked(true);
+    }
+    
+    // Проверяем переход на следующий уровень на основе локальных сообщений с девушкой
     if (currentMessagesCount >= 20 && currentLevel === 0) {
-      if (userSubscription.flirt && maxAllowedLevel >= 1) {
+      if (userSubscription.flirt && maxAllowedLevel >= 1 && totalMessages < 50) {
         setCurrentLevel(1);
-
         addSystemMessage('🎉 Новый уровень!');
-      } else {
-        setShowNSFWWarning(true);
       }
     } else if (currentMessagesCount >= 50 && currentLevel === 1) {
       if (userSubscription.intimate && maxAllowedLevel >= 2 && girl.unlocked) {
         setCurrentLevel(2);
         addSystemMessage('🔥 Максимальный уровень близости! NSFW контент разблокирован');
-      } else {
-        setShowNSFWWarning(true);
       }
     }
   }, [currentMessagesCount, currentLevel, girl.unlocked, userSubscription, maxAllowedLevel]);
@@ -592,10 +620,12 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                     <div className="flex items-start gap-3">
                       <Icon name="Lock" size={20} className="text-destructive mt-0.5" />
                       <div className="flex-1">
-                        <h4 className="font-semibold mb-2">🔒 {userSubscription.flirt ? 'Достигнут лимит сообщений' : 'NSFW контент заблокирован'}</h4>
+                        <h4 className="font-semibold mb-2">🔒 {isBlocked ? 'Достигнут лимит сообщений' : 'NSFW контент заблокирован'}</h4>
                         <p className="text-sm text-muted-foreground mb-3">
-                          {userSubscription.flirt 
-                            ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим". Либо дождитесь обновления лимита — на тарифе "Флирт" дается 50 сообщений в день.'
+                          {isBlocked
+                            ? userSubscription.flirt
+                              ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим". Либо дождитесь обновления лимита — на тарифе "Флирт" дается 50 сообщений в день.'
+                              : 'Достигнут лимит бесплатных сообщений. Подключите тариф "Флирт" для 50 сообщений в день или "Интим" для безлимитного общения.'
                             : 'Вы достигли максимального уровня близости, но для доступа к интимному контенту необходима подписка'
                           }
                         </p>
@@ -603,9 +633,11 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                           <Button size="sm" onClick={onClose}>
                             Посмотреть тарифы
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => setShowNSFWWarning(false)}>
-                            Закрыть
-                          </Button>
+                          {!isBlocked && (
+                            <Button size="sm" variant="outline" onClick={() => setShowNSFWWarning(false)}>
+                              Закрыть
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
