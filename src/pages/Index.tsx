@@ -92,6 +92,25 @@ const getLevelInfo = (level: number, messagesCount: number) => {
   };
 };
 
+const getUserSubscriptionInfo = (subscription: { flirt: boolean; intimate: boolean }) => {
+  if (subscription.intimate) {
+    return {
+      title: '🔥 Интим',
+      description: 'Полный доступ',
+    };
+  }
+  if (subscription.flirt) {
+    return {
+      title: '💕 Флирт',
+      description: 'До 50 сообщений/день',
+    };
+  }
+  return {
+    title: '🌸 Знакомство',
+    description: 'До 20 сообщений/день',
+  };
+};
+
 interface IndexProps {
   userData: any;
   onLogout: () => void;
@@ -374,7 +393,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                 const stats = girlStats[girl.id];
                 const actualLevel = stats ? stats.relationship_level : girl.level;
                 const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                const levelInfo = getLevelInfo(actualLevel, displayMessagesCount);
+                const subscriptionInfo = getUserSubscriptionInfo(userSubscription);
                 return (
                   <Card
                     key={girl.id}
@@ -414,10 +433,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       <p className="text-sm text-muted-foreground mb-4">{girl.bio}</p>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{levelInfo.title}</span>
-                          <span className="text-muted-foreground">{levelInfo.description}</span>
+                          <span className="font-medium">{subscriptionInfo.title}</span>
+                          <span className="text-muted-foreground">{subscriptionInfo.description}</span>
                         </div>
-                        <Progress value={levelInfo.progress} className="h-2" />
                         {stats && stats.total_messages > 0 && (
                           <div className="text-xs text-muted-foreground mt-1">
                             💬 {stats.total_messages} {stats.total_messages === 1 ? 'сообщение' : stats.total_messages < 5 ? 'сообщения' : 'сообщений'}
@@ -457,7 +475,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                   const stats = girlStats[girl.id];
                   const actualLevel = stats ? stats.relationship_level : girl.level;
                   const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                  const levelInfo = getLevelInfo(actualLevel, displayMessagesCount);
+                  const subscriptionInfo = getUserSubscriptionInfo(userSubscription);
                   return (
                     <Card
                       key={girl.id}
@@ -478,7 +496,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
-                                {levelInfo.title}
+                                {subscriptionInfo.title}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 {displayMessagesCount} сообщений
