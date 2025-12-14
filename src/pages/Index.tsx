@@ -333,6 +333,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         body: JSON.stringify({
           user_id: userId,
           plan_type: selectedPurchaseType,
+          girl_id: girlId,
         }),
       });
 

@@ -58,18 +58,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Если платёж успешен (CONFIRMED - это успешная оплата в Platega)
         if status in ['success', 'completed', 'COMPLETED', 'SUCCESS', 'CONFIRMED']:
             print(f'DEBUG WEBHOOK: Payment successful! Processing order_id={order_id}')
-            # Парсим order_id (формат: user_id_plan_type_request_id)
-            # Для one_girl и all_girls формат: user_id_one_girl_request_id (3+ части)
+            # Парсим order_id
+            # Формат: user_id_plan_type_[girl_id_]request_id
+            # one_girl: user_123_one_girl_girl456_req789
+            # all_girls: user_123_all_girls_req789
             parts = order_id.split('_')
             print(f'DEBUG WEBHOOK: Parsed parts = {parts}')
             if len(parts) >= 2:
                 user_id = parts[0]
-                # Для составных plan_type (one_girl, all_girls) объединяем части
+                girl_id = None
+                
+                # Определяем plan_type и girl_id
                 if len(parts) >= 3 and parts[1] in ['one', 'all']:
                     plan_type = f'{parts[1]}_{parts[2]}'
+                    # Для one_girl есть girl_id перед request_id
+                    if parts[1] == 'one' and len(parts) >= 5:
+                        girl_id = parts[3]
                 else:
                     plan_type = parts[1]
-                print(f'DEBUG WEBHOOK: user_id={user_id}, plan_type={plan_type}')
+                print(f'DEBUG WEBHOOK: user_id={user_id}, plan_type={plan_type}, girl_id={girl_id}')
                 
                 # Подключаемся к БД и активируем подписку
                 conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -103,9 +110,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             ''', (user_id,))
                     elif plan_type in ['one_girl', 'one_girl_day']:
                         cur.execute('''
-                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, purchased_at)
-                            VALUES (%s, 'one_girl', CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
-                        ''', (user_id,))
+                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, girl_id, expires_at, purchased_at)
+                            VALUES (%s, 'one_girl', %s, CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
+                        ''', (user_id, girl_id))
                     elif plan_type in ['all_girls', 'all_girls_day']:
                         cur.execute('''
                             INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, purchased_at)

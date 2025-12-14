@@ -347,7 +347,10 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         if subscription:
             result['subscription_type'] = subscription[0]
         
-        cur.execute("SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s", (user_id,))
+        cur.execute(
+            "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP", 
+            (user_id,)
+        )
         purchases = cur.fetchall()
         
         for purchase_type, girl_id in purchases:

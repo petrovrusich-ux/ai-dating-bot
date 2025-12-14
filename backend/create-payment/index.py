@@ -36,8 +36,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         body_data = json.loads(event.get('body', '{}'))
         user_id: str = body_data.get('user_id')
         plan_type: str = body_data.get('plan_type')
+        girl_id: str = body_data.get('girl_id', '')
         
-        print(f'DEBUG: Received plan_type={plan_type}, user_id={user_id}')
+        print(f'DEBUG: Received plan_type={plan_type}, user_id={user_id}, girl_id={girl_id}')
         
         if not user_id or not plan_type:
             return {
@@ -70,6 +71,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'Content-Type': 'application/json'
         }
         
+        # Формируем payload с girl_id для one_girl
+        order_payload = f'{user_id}_{plan_type}'
+        if girl_id and plan_type in ['one_girl', 'one_girl_day']:
+            order_payload += f'_{girl_id}'
+        order_payload += f'_{context.request_id}'
+        
         payload = {
             'paymentMethod': 2,
             'paymentDetails': {
@@ -79,7 +86,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'description': f'Подписка {plan_type}',
             'return': f'https://airomance.ru/?payment=success&plan={plan_type}&user={user_id}',
             'failedUrl': 'https://airomance.ru/?payment=failed',
-            'payload': f'{user_id}_{plan_type}_{context.request_id}'
+            'payload': order_payload
         }
         
         response = requests.post(platega_url, json=payload, headers=headers, timeout=10)
