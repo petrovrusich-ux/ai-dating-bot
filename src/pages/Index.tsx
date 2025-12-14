@@ -632,6 +632,11 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                               const now = new Date();
                               const expires = new Date(userSubscription.purchase_expires);
                               const diff = expires.getTime() - now.getTime();
+                              
+                              if (diff <= 0) {
+                                return '⏱️ Истекло';
+                              }
+                              
                               const hours = Math.floor(diff / (1000 * 60 * 60));
                               const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                               return `⏱️ ${hours}ч ${minutes}м`;
