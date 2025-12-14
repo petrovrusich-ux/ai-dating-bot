@@ -134,6 +134,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     purchase_type?: string;
     purchased_girls?: string[];
     has_all_girls?: boolean;
+    limit_reset_time?: string | null;
   }>(userData?.subscription || { flirt: false, intimate: false });
   const userId = userData?.user_id || 'user_' + Date.now();
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
@@ -143,6 +144,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const [selectedPurchasePrice, setSelectedPurchasePrice] = useState(0);
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [deniedGirlId, setDeniedGirlId] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -162,6 +164,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         purchase_type: data.purchase_type,
         purchased_girls: data.purchased_girls || [],
         has_all_girls: data.has_all_girls || false,
+        limit_reset_time: data.limit_reset_time || null,
       });
       
       return data;
@@ -241,6 +244,26 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     loadGirlStats(userId);
     loadActiveChats(userId);
   }, [userId]);
+
+  // Автоматическое обновление таймера каждую секунду
+  useEffect(() => {
+    if (userSubscription.limit_reset_time) {
+      const interval = setInterval(() => {
+        const now = new Date();
+        setCurrentTime(now);
+        const resetTime = new Date(userSubscription.limit_reset_time);
+        const diff = resetTime.getTime() - now.getTime();
+        
+        // Если время вышло, обновляем подписку
+        if (diff <= 0) {
+          checkSubscription(userId);
+          clearInterval(interval);
+        }
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [userSubscription.limit_reset_time, userId]);
 
   const handleOpenChat = async (girl: Girl) => {
     const subData = await checkSubscription(userId);
@@ -644,6 +667,35 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Тариф не подключён</p>
+                    )}
+                    
+                    {/* Таймер обнуления лимита */}
+                    {userSubscription.limit_reset_time && (
+                      <div className="relative mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center animate-pulse">
+                              <Icon name="Clock" size={20} className="text-white" />
+                            </div>
+                            <span className="text-sm font-medium">До обновления лимита:</span>
+                          </div>
+                          <span className="text-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                            {(() => {
+                              const resetTime = new Date(userSubscription.limit_reset_time);
+                              const diff = resetTime.getTime() - currentTime.getTime();
+                              
+                              if (diff <= 0) {
+                                return '⏱️ Обновляется...';
+                              }
+                              
+                              const hours = Math.floor(diff / (1000 * 60 * 60));
+                              const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                              return `${hours}ч ${minutes}м ${seconds}с`;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </CardContent>

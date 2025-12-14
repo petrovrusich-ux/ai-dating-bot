@@ -367,7 +367,7 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
                 result['purchased_girls'].append(girl_id)
         
         cur.execute(
-            "SELECT total_messages, last_reset_date FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
+            "SELECT total_messages, last_reset_date, limit_reset_time FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
             (user_id,)
         )
         message_stats = cur.fetchone()
@@ -375,6 +375,7 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         if message_stats:
             total_messages = message_stats[0]
             last_reset = message_stats[1]
+            limit_reset_time = message_stats[2] if len(message_stats) > 2 else None
             
             if last_reset and last_reset < datetime.now().date():
                 cur.execute(
@@ -385,8 +386,10 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
                 total_messages = 0
             
             result['total_messages'] = total_messages
+            result['limit_reset_time'] = limit_reset_time.isoformat() if limit_reset_time else None
         else:
             result['total_messages'] = 0
+            result['limit_reset_time'] = None
         
         cur.execute(
             "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",

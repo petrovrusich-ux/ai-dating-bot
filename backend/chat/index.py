@@ -18,18 +18,33 @@ def get_db_connection():
     return psycopg2.connect(database_url)
 
 def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str, Any]:
-    from datetime import datetime
+    from datetime import datetime, timedelta
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # Получаем статистику сообщений и время сброса лимита
         cur.execute(
-            "SELECT total_messages FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
+            "SELECT total_messages, limit_reset_time FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
             (user_id,)
         )
         result = cur.fetchone()
         total_messages = result[0] if result else 0
+        limit_reset_time = result[1] if result and len(result) > 1 else None
+        
+        # Проверяем, прошло ли 24 часа с момента установки лимита
+        now = datetime.now()
+        if limit_reset_time and now >= limit_reset_time:
+            # Сбрасываем счетчик и время сброса
+            cur.execute(
+                "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                (user_id,)
+            )
+            conn.commit()
+            total_messages = 0
+            limit_reset_time = None
+            print(f"✅ Лимит сброшен для user_id={user_id}")
         
         cur.execute(
             "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
@@ -66,19 +81,48 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                     has_one_time_access = True
                     break
         
-        cur.close()
-        conn.close()
-        
         if has_intimate or has_one_time_access:
-            return {'allowed': True, 'total_messages': total_messages, 'limit': None}
+            cur.close()
+            conn.close()
+            return {'allowed': True, 'total_messages': total_messages, 'limit': None, 'limit_reset_time': None}
         elif has_flirt:
             if total_messages >= 50:
-                return {'allowed': False, 'total_messages': total_messages, 'limit': 50, 'reason': 'flirt_limit'}
-            return {'allowed': True, 'total_messages': total_messages, 'limit': 50}
+                # Устанавливаем время сброса лимита через 24 часа, если оно еще не установлено
+                if not limit_reset_time:
+                    reset_time = now + timedelta(hours=24)
+                    cur.execute(
+                        "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                        (reset_time, user_id)
+                    )
+                    conn.commit()
+                    limit_reset_time = reset_time
+                    print(f"⏰ Установлено время сброса лимита: {reset_time} для user_id={user_id}")
+                
+                cur.close()
+                conn.close()
+                return {'allowed': False, 'total_messages': total_messages, 'limit': 50, 'reason': 'flirt_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            cur.close()
+            conn.close()
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 50, 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
         else:
             if total_messages >= 20:
-                return {'allowed': False, 'total_messages': total_messages, 'limit': 20, 'reason': 'free_limit'}
-            return {'allowed': True, 'total_messages': total_messages, 'limit': 20}
+                # Устанавливаем время сброса лимита через 24 часа, если оно еще не установлено
+                if not limit_reset_time:
+                    reset_time = now + timedelta(hours=24)
+                    cur.execute(
+                        "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                        (reset_time, user_id)
+                    )
+                    conn.commit()
+                    limit_reset_time = reset_time
+                    print(f"⏰ Установлено время сброса лимита: {reset_time} для user_id={user_id}")
+                
+                cur.close()
+                conn.close()
+                return {'allowed': False, 'total_messages': total_messages, 'limit': 20, 'reason': 'free_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            cur.close()
+            conn.close()
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 20, 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
     except Exception as e:
         print(f"❌ check_message_limit error: {str(e)}")
         return {'allowed': True, 'total_messages': 0, 'limit': None}

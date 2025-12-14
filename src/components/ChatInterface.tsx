@@ -41,6 +41,7 @@ interface ChatInterfaceProps {
     total_messages?: number;
     message_limit?: number | null;
     can_send_message?: boolean;
+    limit_reset_time?: string | null;
   };
   userId: string;
   onDeleteChat?: (girlId: string) => void;
