@@ -59,11 +59,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if status in ['success', 'completed', 'COMPLETED', 'SUCCESS', 'CONFIRMED']:
             print(f'DEBUG WEBHOOK: Payment successful! Processing order_id={order_id}')
             # Парсим order_id (формат: user_id_plan_type_request_id)
+            # Для one_girl и all_girls формат: user_id_one_girl_request_id (3+ части)
             parts = order_id.split('_')
             print(f'DEBUG WEBHOOK: Parsed parts = {parts}')
             if len(parts) >= 2:
                 user_id = parts[0]
-                plan_type = parts[1]
+                # Для составных plan_type (one_girl, all_girls) объединяем части
+                if len(parts) >= 3 and parts[1] in ['one', 'all']:
+                    plan_type = f'{parts[1]}_{parts[2]}'
+                else:
+                    plan_type = parts[1]
                 print(f'DEBUG WEBHOOK: user_id={user_id}, plan_type={plan_type}')
                 
                 # Подключаемся к БД и активируем подписку
@@ -98,12 +103,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             ''', (user_id,))
                     elif plan_type in ['one_girl', 'one_girl_day']:
                         cur.execute('''
-                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, created_at)
+                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, purchased_at)
                             VALUES (%s, 'one_girl', CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
                         ''', (user_id,))
                     elif plan_type in ['all_girls', 'all_girls_day']:
                         cur.execute('''
-                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, created_at)
+                            INSERT INTO t_p77610913_ai_dating_bot.purchases (user_id, purchase_type, expires_at, purchased_at)
                             VALUES (%s, 'all_girls', CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP)
                         ''', (user_id,))
                     
