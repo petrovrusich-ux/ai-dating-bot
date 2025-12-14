@@ -590,34 +590,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       </div>
                       <span className="font-semibold text-lg">Статус тарифа</span>
                     </div>
-                    {userSubscription.flirt || userSubscription.intimate ? (
-                      <div className="relative space-y-3">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Активный тариф:</span>
-                          <Badge 
-                            className={userSubscription.intimate 
-                              ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 shadow-lg" 
-                              : "bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 shadow-lg"
-                            }
-                          >
-                            {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
-                          </Badge>
-                        </div>
-                        {userSubscription.subscription_end && userSubscription.subscription_end.trim() !== '' && (
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                            <span className="text-sm font-medium text-muted-foreground">Действует до:</span>
-                            <span className="text-sm font-semibold">
-                              {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
-                                day: 'numeric', 
-                                month: 'long',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : userSubscription.purchase_expires && userSubscription.purchase_type ? (
+                    {userSubscription.purchase_expires && userSubscription.purchase_type ? (
                       <div className="relative space-y-3">
                         <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
                           <span className="text-sm font-medium text-muted-foreground">Разовая покупка:</span>
@@ -641,6 +614,31 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                               const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                               return `⏱️ ${hours}ч ${minutes}м`;
                             })()}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (userSubscription.flirt || userSubscription.intimate) && userSubscription.subscription_end && !userSubscription.subscription_end.includes('2099') ? (
+                      <div className="relative space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                          <span className="text-sm font-medium text-muted-foreground">Активный тариф:</span>
+                          <Badge 
+                            className={userSubscription.intimate 
+                              ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 shadow-lg" 
+                              : "bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 shadow-lg"
+                            }
+                          >
+                            {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
+                          <span className="text-sm font-medium text-muted-foreground">Действует до:</span>
+                          <span className="text-sm font-semibold">
+                            {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
+                              day: 'numeric', 
+                              month: 'long',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </span>
                         </div>
                       </div>
