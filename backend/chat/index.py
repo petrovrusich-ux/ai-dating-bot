@@ -18,7 +18,7 @@ def get_db_connection():
     return psycopg2.connect(database_url)
 
 def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str, Any]:
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
     
     try:
         conn = get_db_connection()
@@ -33,23 +33,18 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
         total_messages = result[0] if result else 0
         limit_reset_time = result[1] if result and len(result) > 1 else None
         
-        # Проверяем, прошло ли 24 часа с момента установки лимита (используем UTC)
-        now = datetime.now(timezone.utc)
-        if limit_reset_time:
-            # Убедимся что limit_reset_time timezone-aware
-            if limit_reset_time.tzinfo is None:
-                limit_reset_time = limit_reset_time.replace(tzinfo=timezone.utc)
-            
-            if now >= limit_reset_time:
-                # Сбрасываем счетчик и время сброса
-                cur.execute(
-                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
-                    (user_id,)
-                )
-                conn.commit()
-                total_messages = 0
-                limit_reset_time = None
-                print(f"✅ Лимит сброшен для user_id={user_id}")
+        # Проверяем, прошло ли 24 часа с момента установки лимита
+        now = datetime.now()
+        if limit_reset_time and now >= limit_reset_time:
+            # Сбрасываем счетчик и время сброса
+            cur.execute(
+                "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                (user_id,)
+            )
+            conn.commit()
+            total_messages = 0
+            limit_reset_time = None
+            print(f"✅ Лимит сброшен для user_id={user_id}")
         
         cur.execute(
             "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
@@ -65,15 +60,10 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
             intimate_flag = subscription[1]
             end_date = subscription[2]
             
-            # Проверяем, что подписка не истекла (используем UTC)
-            if end_date:
-                # Убедимся что end_date timezone-aware
-                if end_date.tzinfo is None:
-                    end_date = end_date.replace(tzinfo=timezone.utc)
-                
-                if end_date > now:
-                    has_flirt = flirt_flag or False
-                    has_intimate = intimate_flag or False
+            # Проверяем, что подписка не истекла
+            if end_date and end_date > datetime.now():
+                has_flirt = flirt_flag or False
+                has_intimate = intimate_flag or False
         
         cur.execute(
             "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
