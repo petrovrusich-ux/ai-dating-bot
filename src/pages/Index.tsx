@@ -234,17 +234,15 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success') {
-      setTimeout(async () => {
-        await checkSubscription(userId);
-        await loadGirlStats(userId);
-        await loadActiveChats(userId);
+      setTimeout(() => {
+        checkSubscription(userId);
         window.history.replaceState({}, '', '/');
       }, 1000);
-    } else {
-      checkSubscription(userId);
-      loadGirlStats(userId);
-      loadActiveChats(userId);
     }
+    
+    checkSubscription(userId);
+    loadGirlStats(userId);
+    loadActiveChats(userId);
   }, [userId]);
 
   // Автоматическое обновление таймера каждую секунду
