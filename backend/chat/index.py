@@ -154,6 +154,127 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False
         }
     
+    # Handle GET requests for subscription/stats queries
+    if method == 'GET':
+        from datetime import datetime, timezone
+        params = event.get('queryStringParameters') or {}
+        user_id = params.get('user_id')
+        
+        # Check subscription status
+        if params.get('subscription') == 'true':
+            if not user_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'user_id required'}),
+                    'isBase64Encoded': False
+                }
+            
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Get subscription info
+                cur.execute(
+                    "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s",
+                    (user_id,)
+                )
+                sub = cur.fetchone()
+                
+                flirt = False
+                intimate = False
+                subscription_end = None
+                
+                if sub:
+                    now = datetime.now(timezone.utc)
+                    end_date = sub[2]
+                    if end_date and end_date.tzinfo is None:
+                        end_date = end_date.replace(tzinfo=timezone.utc)
+                    
+                    if end_date and end_date > now:
+                        flirt = sub[0] or False
+                        intimate = sub[1] or False
+                        subscription_end = end_date.isoformat()
+                
+                # Get message stats
+                cur.execute(
+                    "SELECT total_messages, limit_reset_time FROM t_p77610913_ai_dating_bot.user_message_stats WHERE user_id = %s",
+                    (user_id,)
+                )
+                stats = cur.fetchone()
+                total_messages = stats[0] if stats else 0
+                limit_reset_time = stats[1].isoformat() if stats and stats[1] else None
+                
+                # Get active purchases
+                cur.execute(
+                    "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
+                    (user_id,)
+                )
+                purchases = cur.fetchall()
+                
+                has_all_girls = False
+                purchased_girls = []
+                purchase_expires = None
+                purchase_type = None
+                
+                for p_type, girl_id, expires in purchases:
+                    if p_type == 'all_girls':
+                        has_all_girls = True
+                        purchase_type = 'all_girls'
+                        purchase_expires = expires.isoformat() if expires else None
+                        break
+                    elif p_type == 'one_girl' and girl_id:
+                        purchased_girls.append(girl_id)
+                        if not purchase_type:
+                            purchase_type = 'one_girl'
+                            purchase_expires = expires.isoformat() if expires else None
+                
+                # Determine if can send message
+                can_send_message = True
+                if intimate or has_all_girls:
+                    can_send_message = True
+                elif flirt and total_messages >= 50:
+                    can_send_message = False
+                elif not flirt and not intimate and total_messages >= 20:
+                    can_send_message = False
+                
+                cur.close()
+                conn.close()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({
+                        'flirt': flirt,
+                        'intimate': intimate,
+                        'total_messages': total_messages,
+                        'can_send_message': can_send_message,
+                        'subscription_end': subscription_end,
+                        'purchase_type': purchase_type,
+                        'purchase_expires': purchase_expires,
+                        'purchased_girls': purchased_girls,
+                        'has_all_girls': has_all_girls,
+                        'limit_reset_time': limit_reset_time
+                    }),
+                    'isBase64Encoded': False
+                }
+            except Exception as e:
+                print(f"Error checking subscription: {str(e)}")
+                return {
+                    'statusCode': 500,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': str(e)}),
+                    'isBase64Encoded': False
+                }
+        
+        # Handle other GET requests (stats, messages, etc.) - add more handlers here
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Invalid GET request parameters'}),
+            'isBase64Encoded': False
+        }
+    
     if method != 'POST':
         return {
             'statusCode': 405,

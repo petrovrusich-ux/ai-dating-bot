@@ -300,6 +300,26 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     saveMessage(systemMessage);
   };
 
+  const formatTimeRemaining = (resetTime: string): string => {
+    try {
+      const resetDate = new Date(resetTime);
+      const now = new Date();
+      const diff = resetDate.getTime() - now.getTime();
+      
+      if (diff <= 0) return 'Сейчас';
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        return `${hours}ч ${minutes}м`;
+      }
+      return `${minutes}м`;
+    } catch {
+      return 'Скоро';
+    }
+  };
+
   const handleRequestPhoto = async () => {
     if (currentLevel < 2) {
       setShowNSFWWarning(true);
@@ -742,22 +762,49 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
               <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
                 <Icon name="Lock" size={32} className="text-destructive" />
               </div>
-              <h3 className="text-2xl font-heading font-bold mb-3">NSFW контент заблокирован</h3>
-              <p className="text-muted-foreground mb-6">
-                {currentLevel === 0
-                  ? 'Достигнут лимит сообщений на уровне "Знакомство". Для перехода к флирту и интимному общению нужен тариф.'
-                  : currentLevel === 1
-                  ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим".'
-                  : 'Для доступа к NSFW-контенту и интимным фото необходим тариф "Интим".'}
-              </p>
+              <h3 className="text-2xl font-heading font-bold mb-3">
+                {isBlocked ? 'Лимит сообщений исчерпан' : 'NSFW контент заблокирован'}
+              </h3>
+              
+              {isBlocked ? (
+                <div className="mb-6 space-y-3">
+                  <p className="text-muted-foreground">
+                    {!userSubscription.flirt && !userSubscription.intimate
+                      ? `Вы достигли дневного лимита в 20 сообщений на тарифе "Знакомство".`
+                      : userSubscription.flirt && !userSubscription.intimate
+                      ? `Вы достигли дневного лимита в 50 сообщений на тарифе "Флирт".`
+                      : 'Достигнут лимит сообщений.'}
+                  </p>
+                  <div className="bg-background/50 border border-border rounded-lg p-3">
+                    <div className="text-sm text-muted-foreground mb-1">Отправлено сообщений сегодня:</div>
+                    <div className="text-3xl font-bold text-primary">{userSubscription.total_messages || 0}</div>
+                    {userSubscription.limit_reset_time && (
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Сброс через: {formatTimeRemaining(userSubscription.limit_reset_time)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground mb-6">
+                  {currentLevel === 0
+                    ? 'Достигнут лимит сообщений на уровне "Знакомство". Для перехода к флирту и интимному общению нужен тариф.'
+                    : currentLevel === 1
+                    ? 'Достигнут лимит сообщений на уровне "Флирт". Для доступа к интимному контенту подключите тариф "Интим".'
+                    : 'Для доступа к NSFW-контенту и интимным фото необходим тариф "Интим".'}
+                </p>
+              )}
+              
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowNSFWWarning(false)}
-                  className="flex-1"
-                >
-                  Закрыть
-                </Button>
+                {!isBlocked && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowNSFWWarning(false)}
+                    className="flex-1"
+                  >
+                    Закрыть
+                  </Button>
+                )}
                 <Button
                   onClick={() => {
                     setShowNSFWWarning(false);
@@ -766,7 +813,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                       onShowSubscription();
                     }
                   }}
-                  className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                  className={isBlocked ? 'w-full bg-gradient-to-r from-primary to-secondary' : 'flex-1 bg-gradient-to-r from-primary to-secondary'}
                 >
                   Посмотреть тарифы
                 </Button>
