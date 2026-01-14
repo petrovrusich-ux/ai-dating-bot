@@ -1,3 +1,7 @@
 {
+  "payment-webhook": "https://functions.poehali.dev/b0c6cb64-30b7-41a4-8b50-812adcacaf14",
+  "create-payment": "https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280",
+  "get-db-url": "https://functions.poehali.dev/66ab0984-546f-4543-8946-e5326778f719",
+  "auth": "https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1",
   "chat": "https://functions.poehali.dev/8dfb1a82-db60-4e1f-85ba-bd3f9678b846"
 }
