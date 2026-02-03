@@ -9,7 +9,7 @@ import os
 import jwt
 import bcrypt
 import psycopg2
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -329,7 +329,8 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             end_date = subscription_features[2]
             
             # Проверяем, что подписка не истекла
-            if end_date and end_date > datetime.now():
+            now = datetime.now(timezone.utc) if end_date and end_date.tzinfo else datetime.now()
+            if end_date and end_date > now:
                 result['flirt'] = flirt_flag
                 result['intimate'] = intimate_flag
                 result['has_subscription'] = True
