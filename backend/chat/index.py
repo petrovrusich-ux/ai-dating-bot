@@ -33,23 +33,36 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
         total_messages = result[0] if result else 0
         limit_reset_time = result[1] if result and len(result) > 1 else None
         
-        # Проверяем, прошло ли 24 часа с момента установки лимита (используем UTC)
+        # Проверяем, прошло ли время сброса лимита (используем UTC)
         now = datetime.now(timezone.utc)
+        
+        # Инициализация limit_reset_time при NULL (завтра 00:00 UTC)
+        if limit_reset_time is None and total_messages > 0:
+            next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            cur.execute(
+                "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                (next_midnight, user_id)
+            )
+            conn.commit()
+            limit_reset_time = next_midnight
+            print(f"🔧 Инициализирован limit_reset_time = {next_midnight} для user_id={user_id}")
+        
         if limit_reset_time:
             # Убедимся что limit_reset_time timezone-aware
             if limit_reset_time.tzinfo is None:
                 limit_reset_time = limit_reset_time.replace(tzinfo=timezone.utc)
             
             if now >= limit_reset_time:
-                # Сбрасываем счетчик и время сброса
+                # Сбрасываем счетчик и устанавливаем новое время сброса (завтра 00:00 UTC)
+                next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
                 cur.execute(
-                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
-                    (user_id,)
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                    (next_midnight, user_id)
                 )
                 conn.commit()
                 total_messages = 0
-                limit_reset_time = None
-                print(f"✅ Лимит сброшен для user_id={user_id}")
+                limit_reset_time = next_midnight
+                print(f"✅ Лимит сброшен для user_id={user_id}, новое время сброса: {next_midnight}")
         
         cur.execute(
             "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
@@ -97,16 +110,16 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
             return {'allowed': True, 'total_messages': total_messages, 'limit': None, 'limit_reset_time': None}
         elif has_flirt:
             if total_messages >= 50:
-                # Устанавливаем время сброса лимита через 24 часа, если оно еще не установлено
+                # Устанавливаем время сброса лимита (завтра 00:00 UTC), если оно еще не установлено
                 if not limit_reset_time:
-                    reset_time = now + timedelta(hours=24)
+                    reset_time = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
                     cur.execute(
                         "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
                         (reset_time, user_id)
                     )
                     conn.commit()
                     limit_reset_time = reset_time
-                    print(f"⏰ Установлено время сброса лимита: {reset_time} для user_id={user_id}")
+                    print(f"⏰ Установлено время сброса лимита: {reset_time} (завтра 00:00 UTC) для user_id={user_id}")
                 
                 cur.close()
                 conn.close()
@@ -116,16 +129,16 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
             return {'allowed': True, 'total_messages': total_messages, 'limit': 50, 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
         else:
             if total_messages >= 20:
-                # Устанавливаем время сброса лимита через 24 часа, если оно еще не установлено
+                # Устанавливаем время сброса лимита (завтра 00:00 UTC), если оно еще не установлено
                 if not limit_reset_time:
-                    reset_time = now + timedelta(hours=24)
+                    reset_time = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
                     cur.execute(
                         "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
                         (reset_time, user_id)
                     )
                     conn.commit()
                     limit_reset_time = reset_time
-                    print(f"⏰ Установлено время сброса лимита: {reset_time} для user_id={user_id}")
+                    print(f"⏰ Установлено время сброса лимита: {reset_time} (завтра 00:00 UTC) для user_id={user_id}")
                 
                 cur.close()
                 conn.close()
