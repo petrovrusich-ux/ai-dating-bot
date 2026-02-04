@@ -12,7 +12,6 @@ import ChatInterface from '@/components/ChatInterface';
 import GirlSelectionModal from '@/components/GirlSelectionModal';
 import GirlAccessDeniedDialog from '@/components/GirlAccessDeniedDialog';
 import { updatePageMeta } from '@/utils/seo';
-import { toast } from 'sonner';
 
 interface Girl {
   id: string;
@@ -255,15 +254,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         const resetTime = new Date(userSubscription.limit_reset_time);
         const diff = resetTime.getTime() - now.getTime();
         
-        // Если время вышло, обновляем подписку и показываем уведомление
+        // Если время вышло, обновляем подписку
         if (diff <= 0) {
-          checkSubscription(userId).then(() => {
-            const messageLimit = userSubscription.flirt ? 50 : 20;
-            toast.success('Лимит сообщений обновлён!', {
-              description: `Теперь доступно ещё ${messageLimit} сообщений`,
-              duration: 4000,
-            });
-          });
+          checkSubscription(userId);
           clearInterval(interval);
         }
       }, 1000);
