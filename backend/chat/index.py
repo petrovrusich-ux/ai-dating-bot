@@ -36,17 +36,6 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
         # Проверяем, прошло ли время сброса лимита (используем UTC)
         now = datetime.now(timezone.utc)
         
-        # Инициализация limit_reset_time при NULL (завтра 00:00 UTC)
-        if limit_reset_time is None and total_messages > 0:
-            next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-            cur.execute(
-                "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
-                (next_midnight, user_id)
-            )
-            conn.commit()
-            limit_reset_time = next_midnight
-            print(f"🔧 Инициализирован limit_reset_time = {next_midnight} для user_id={user_id}")
-        
         if limit_reset_time:
             # Убедимся что limit_reset_time timezone-aware
             if limit_reset_time.tzinfo is None:
