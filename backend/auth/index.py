@@ -390,19 +390,12 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
                 conn.commit()
                 total_messages = 0
                 limit_reset_time = tomorrow_midnight_utc
-            elif not limit_reset_time:
-                cur.execute(
-                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s WHERE user_id = %s",
-                    (tomorrow_midnight_utc, user_id)
-                )
-                conn.commit()
-                limit_reset_time = tomorrow_midnight_utc
             
             result['total_messages'] = total_messages
             result['limit_reset_time'] = limit_reset_time.isoformat() if limit_reset_time else None
         else:
             result['total_messages'] = 0
-            result['limit_reset_time'] = tomorrow_midnight_utc.isoformat()
+            result['limit_reset_time'] = None
         
         cur.execute(
             "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
