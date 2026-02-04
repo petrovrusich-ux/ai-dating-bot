@@ -373,24 +373,36 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         )
         message_stats = cur.fetchone()
         
+        now_utc = datetime.now(timezone.utc)
+        today_utc = now_utc.date()
+        tomorrow_midnight_utc = datetime.combine(today_utc + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+        
         if message_stats:
             total_messages = message_stats[0]
             last_reset = message_stats[1]
             limit_reset_time = message_stats[2] if len(message_stats) > 2 else None
             
-            if last_reset and last_reset < datetime.now().date():
+            if last_reset and last_reset < today_utc:
                 cur.execute(
-                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, last_reset_date = CURRENT_DATE WHERE user_id = %s",
-                    (user_id,)
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, last_reset_date = CURRENT_DATE, limit_reset_time = %s WHERE user_id = %s",
+                    (tomorrow_midnight_utc, user_id)
                 )
                 conn.commit()
                 total_messages = 0
+                limit_reset_time = tomorrow_midnight_utc
+            elif not limit_reset_time:
+                cur.execute(
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s WHERE user_id = %s",
+                    (tomorrow_midnight_utc, user_id)
+                )
+                conn.commit()
+                limit_reset_time = tomorrow_midnight_utc
             
             result['total_messages'] = total_messages
             result['limit_reset_time'] = limit_reset_time.isoformat() if limit_reset_time else None
         else:
             result['total_messages'] = 0
-            result['limit_reset_time'] = None
+            result['limit_reset_time'] = tomorrow_midnight_utc.isoformat()
         
         cur.execute(
             "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
@@ -522,15 +534,20 @@ def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
         )
         
         if sender == 'user':
+            now_utc = datetime.now(timezone.utc)
+            today_utc = now_utc.date()
+            tomorrow_midnight_utc = datetime.combine(today_utc + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+            
             cur.execute(
                 """
-                INSERT INTO t_p77610913_ai_dating_bot.user_message_stats (user_id, total_messages, updated_at)
-                VALUES (%s, 1, CURRENT_TIMESTAMP)
+                INSERT INTO t_p77610913_ai_dating_bot.user_message_stats (user_id, total_messages, updated_at, last_reset_date, limit_reset_time)
+                VALUES (%s, 1, CURRENT_TIMESTAMP, CURRENT_DATE, %s)
                 ON CONFLICT (user_id) DO UPDATE 
                 SET total_messages = t_p77610913_ai_dating_bot.user_message_stats.total_messages + 1,
-                    updated_at = CURRENT_TIMESTAMP
+                    updated_at = CURRENT_TIMESTAMP,
+                    limit_reset_time = COALESCE(t_p77610913_ai_dating_bot.user_message_stats.limit_reset_time, %s)
                 """,
-                (user_id,)
+                (user_id, tomorrow_midnight_utc, tomorrow_midnight_utc)
             )
         
         conn.commit()
