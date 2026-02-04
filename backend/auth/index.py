@@ -534,20 +534,15 @@ def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
         )
         
         if sender == 'user':
-            now_utc = datetime.now(timezone.utc)
-            today_utc = now_utc.date()
-            tomorrow_midnight_utc = datetime.combine(today_utc + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
-            
             cur.execute(
                 """
-                INSERT INTO t_p77610913_ai_dating_bot.user_message_stats (user_id, total_messages, updated_at, last_reset_date, limit_reset_time)
-                VALUES (%s, 1, CURRENT_TIMESTAMP, CURRENT_DATE, %s)
+                INSERT INTO t_p77610913_ai_dating_bot.user_message_stats (user_id, total_messages, updated_at, last_reset_date)
+                VALUES (%s, 1, CURRENT_TIMESTAMP, CURRENT_DATE)
                 ON CONFLICT (user_id) DO UPDATE 
                 SET total_messages = t_p77610913_ai_dating_bot.user_message_stats.total_messages + 1,
-                    updated_at = CURRENT_TIMESTAMP,
-                    limit_reset_time = COALESCE(t_p77610913_ai_dating_bot.user_message_stats.limit_reset_time, %s)
+                    updated_at = CURRENT_TIMESTAMP
                 """,
-                (user_id, tomorrow_midnight_utc, tomorrow_midnight_utc)
+                (user_id,)
             )
         
         conn.commit()
