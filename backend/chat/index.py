@@ -126,7 +126,7 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                 return {'allowed': False, 'total_messages': total_messages, 'limit': 50, 'reason': 'flirt_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
             cur.close()
             conn.close()
-            return {'allowed': True, 'total_messages': total_messages, 'limit': 50, 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 50, 'limit_reset_time': None}
         else:
             if total_messages >= 20:
                 # Устанавливаем время сброса лимита (завтра 00:00 UTC), если оно еще не установлено
@@ -145,7 +145,7 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                 return {'allowed': False, 'total_messages': total_messages, 'limit': 20, 'reason': 'free_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
             cur.close()
             conn.close()
-            return {'allowed': True, 'total_messages': total_messages, 'limit': 20, 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            return {'allowed': True, 'total_messages': total_messages, 'limit': 20, 'limit_reset_time': None}
     except Exception as e:
         print(f"❌ check_message_limit error: {str(e)}")
         return {'allowed': True, 'total_messages': 0, 'limit': None}
