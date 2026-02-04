@@ -373,36 +373,38 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         )
         message_stats = cur.fetchone()
         
-        now_utc = datetime.now(timezone.utc)
-        today_utc = now_utc.date()
-        tomorrow_midnight_utc = datetime.combine(today_utc + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+        msk_tz = timezone(timedelta(hours=3))
+        now_msk = datetime.now(msk_tz)
         
         if message_stats:
             total_messages = message_stats[0]
             last_reset = message_stats[1]
             limit_reset_time = message_stats[2] if len(message_stats) > 2 else None
             
-            if last_reset and last_reset < today_utc:
+            if limit_reset_time and now_msk >= limit_reset_time:
+                new_reset_time = now_msk + timedelta(hours=24)
                 cur.execute(
                     "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, last_reset_date = CURRENT_DATE, limit_reset_time = %s WHERE user_id = %s",
-                    (tomorrow_midnight_utc, user_id)
+                    (new_reset_time, user_id)
                 )
                 conn.commit()
                 total_messages = 0
-                limit_reset_time = tomorrow_midnight_utc
+                limit_reset_time = new_reset_time
             elif not limit_reset_time:
+                new_reset_time = now_msk + timedelta(hours=24)
                 cur.execute(
                     "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s WHERE user_id = %s",
-                    (tomorrow_midnight_utc, user_id)
+                    (new_reset_time, user_id)
                 )
                 conn.commit()
-                limit_reset_time = tomorrow_midnight_utc
+                limit_reset_time = new_reset_time
             
             result['total_messages'] = total_messages
             result['limit_reset_time'] = limit_reset_time.isoformat() if limit_reset_time else None
         else:
+            new_reset_time = now_msk + timedelta(hours=24)
             result['total_messages'] = 0
-            result['limit_reset_time'] = tomorrow_midnight_utc.isoformat()
+            result['limit_reset_time'] = new_reset_time.isoformat()
         
         cur.execute(
             "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
@@ -431,9 +433,25 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         elif result['flirt']:
             result['message_limit'] = 50
             result['can_send_message'] = result['total_messages'] < 50
+            if not result['can_send_message'] and not result.get('limit_reset_time'):
+                new_reset_time = now_msk + timedelta(hours=24)
+                cur.execute(
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s WHERE user_id = %s",
+                    (new_reset_time, user_id)
+                )
+                conn.commit()
+                result['limit_reset_time'] = new_reset_time.isoformat()
         else:
             result['message_limit'] = 20
             result['can_send_message'] = result['total_messages'] < 20
+            if not result['can_send_message'] and not result.get('limit_reset_time'):
+                new_reset_time = now_msk + timedelta(hours=24)
+                cur.execute(
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = %s WHERE user_id = %s",
+                    (new_reset_time, user_id)
+                )
+                conn.commit()
+                result['limit_reset_time'] = new_reset_time.isoformat()
         
         print(f'DEBUG CHECK_SUB: Final result = {result}')
         
@@ -534,9 +552,9 @@ def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
         )
         
         if sender == 'user':
-            now_utc = datetime.now(timezone.utc)
-            today_utc = now_utc.date()
-            tomorrow_midnight_utc = datetime.combine(today_utc + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+            msk_tz = timezone(timedelta(hours=3))
+            now_msk = datetime.now(msk_tz)
+            new_reset_time = now_msk + timedelta(hours=24)
             
             cur.execute(
                 """
@@ -547,7 +565,7 @@ def handle_save_message(body_data: Dict[str, Any]) -> Dict[str, Any]:
                     updated_at = CURRENT_TIMESTAMP,
                     limit_reset_time = COALESCE(t_p77610913_ai_dating_bot.user_message_stats.limit_reset_time, %s)
                 """,
-                (user_id, tomorrow_midnight_utc, tomorrow_midnight_utc)
+                (user_id, new_reset_time, new_reset_time)
             )
         
         conn.commit()
