@@ -669,8 +669,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Тариф не подключён</p>
                     )}
                     
-                    {/* Таймер обнуления лимита */}
-                    {userSubscription.limit_reset_time && (
+                    {/* Таймер обнуления лимита - скрывается при активных разовых тарифах */}
+                    {!userSubscription.purchase_expires && userSubscription.limit_reset_time && (
                       <div className="relative mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
