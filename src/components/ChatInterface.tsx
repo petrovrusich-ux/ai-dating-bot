@@ -140,6 +140,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
@@ -384,6 +385,8 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       setShowNSFWWarning(true);
       return;
     }
+    
+    setIsSendingMessage(true);
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -402,11 +405,13 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
     const typingMessage: Message = {
       id: 'typing',
       sender: 'ai',
-      text: '...',
+      text: 'typing',
       timestamp: new Date(),
 
     };
     setMessages((prev) => [...prev, typingMessage]);
+    
+    setTimeout(() => setIsSendingMessage(false), 300);
 
     try {
       // Build persona prompt based on girl and current state
@@ -452,11 +457,14 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
         setMessages((prev) => prev.filter(m => m.id !== 'typing'));
         setIsBlocked(true);
         setShowNSFWWarning(true);
+        setIsSendingMessage(false);
         return;
       }
 
       // Remove typing indicator and add real response
-      setMessages((prev) => prev.filter(m => m.id !== 'typing'));
+      setTimeout(() => {
+        setMessages((prev) => prev.filter(m => m.id !== 'typing'));
+      }, 300);
 
       const aiResponse: Message = {
         id: Date.now().toString(),
@@ -476,25 +484,28 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       }
     } catch (error) {
       console.error('Error getting AI response:', error);
+      setIsSendingMessage(false);
       // Remove typing indicator and show fallback
-      setMessages((prev) => prev.filter(m => m.id !== 'typing'));
-      const fallbackResponse = getAIResponse(userInput, currentLevel, currentMessagesCount);
-      setMessages((prev) => [...prev, fallbackResponse]);
-      saveMessage(fallbackResponse);
-      setCurrentMessagesCount((prev) => prev + 1);
-      
-      if (onMessageSent) {
-        onMessageSent();
-      }
+      setTimeout(() => {
+        setMessages((prev) => prev.filter(m => m.id !== 'typing'));
+        const fallbackResponse = getAIResponse(userInput, currentLevel, currentMessagesCount);
+        setMessages((prev) => [...prev, fallbackResponse]);
+        saveMessage(fallbackResponse);
+        setCurrentMessagesCount((prev) => prev + 1);
+        
+        if (onMessageSent) {
+          onMessageSent();
+        }
+      }, 300);
     }
   };
 
 
 
   return (
-    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-4xl h-[90vh] flex flex-col">
-        <CardHeader className="border-b border-border p-4">
+    <div className="fixed inset-0 bg-[#0a0a14]/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <Card className="w-full max-w-4xl h-[90vh] flex flex-col bg-[#111127] border-primary/20">
+        <CardHeader className="border-b border-primary/20 p-4 bg-[#111127]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12">
@@ -535,7 +546,9 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Прогресс отношений</span>
-              <span className="text-muted-foreground">{levelInfo.description}</span>
+              <span className="text-muted-foreground">
+                <span className="neon-counter">{currentMessagesCount}</span> {levelInfo.description.includes('/') ? levelInfo.description.substring(levelInfo.description.indexOf('/')) : 'сообщений'}
+              </span>
             </div>
             <Progress value={levelInfo.progress} className="h-2" />
             {levelInfo.nextLevel && (
@@ -548,15 +561,16 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden p-0">
+        <CardContent className="flex-1 overflow-hidden p-0 bg-[#0a0a14]">
           <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
-              {messages.map((message) => (
+              {messages.map((message, index) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} message-slide-in`}
+                  style={{ animationDelay: `${Math.min(index * 0.05, 0.3)}s` }}
                 >
-                  {message.sender === 'ai' && (
+                  {message.sender === 'ai' && message.text !== 'typing' && (
                     <Avatar className="h-8 w-8 mr-2">
                       <AvatarImage src={girl.image} alt={girl.name} />
                       <AvatarFallback>{girl.name[0]}</AvatarFallback>
@@ -564,19 +578,27 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                   )}
                   <div
                     className={`max-w-[70%] ${
-                      message.sender === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-2xl px-4 py-2'
+                      message.text === 'typing'
+                        ? 'px-4 py-3'
+                        : message.sender === 'user'
+                        ? 'neon-user-message text-white px-4 py-2.5'
                         : message.image
                         ? 'space-y-2'
                         : message.isNSFW
-                        ? 'bg-destructive/20 border border-destructive/50 text-foreground rounded-2xl px-4 py-2'
-                        : 'bg-muted text-foreground rounded-2xl px-4 py-2'
+                        ? 'neon-ai-message text-foreground px-4 py-2.5 border-red-500/30'
+                        : 'neon-ai-message text-foreground px-4 py-2.5'
                     }`}
                   >
-                    {message.imageLoading ? (
-                      <div className="bg-muted rounded-2xl px-4 py-2 space-y-3">
+                    {message.text === 'typing' ? (
+                      <div className="typing-dots">
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                      </div>
+                    ) : message.imageLoading ? (
+                      <div className="neon-ai-message px-4 py-2 space-y-3">
                         <p className="text-sm">{message.text}</p>
-                        <div className="w-64 h-64 bg-background rounded-xl flex items-center justify-center">
+                        <div className="w-64 h-64 bg-background/50 rounded-xl flex items-center justify-center border border-primary/20">
                           <div className="text-center space-y-2">
                             <Icon name="Loader2" size={32} className="animate-spin text-primary mx-auto" />
                             <p className="text-xs text-muted-foreground">Генерация фото...</p>
@@ -589,7 +611,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                           <img
                             src={message.image}
                             alt="NSFW content"
-                            className="w-64 h-64 object-contain rounded-xl cursor-pointer hover:opacity-90 transition-opacity bg-muted"
+                            className="w-64 h-64 object-contain rounded-xl cursor-pointer hover:opacity-90 transition-all duration-300 bg-muted border border-pink-500/20 hover:border-pink-500/40"
                             onClick={() => window.open(message.image, '_blank')}
                           />
                           <Badge
@@ -599,7 +621,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                             18+ NSFW
                           </Badge>
                         </div>
-                        <div className="bg-muted rounded-2xl px-4 py-2">
+                        <div className="neon-ai-message px-4 py-2">
                           <p className="text-sm">{message.text}</p>
                           <span className="text-xs opacity-70 mt-1 block">
                             {message.timestamp.toLocaleTimeString('ru-RU', {
@@ -611,7 +633,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm">{message.text}</p>
+                        <p className="text-sm" style={{ textShadow: message.sender === 'user' ? '0 1px 2px rgba(0,0,0,0.3)' : 'none' }}>{message.text}</p>
                         <span className="text-xs opacity-70 mt-1 block">
                           {message.timestamp.toLocaleTimeString('ru-RU', {
                             hour: '2-digit',
@@ -658,7 +680,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
           </ScrollArea>
         </CardContent>
 
-        <div className="border-t border-border p-4 space-y-3">
+        <div className="neon-divider p-4 space-y-3">
           {(isBlocked || userSubscription.can_send_message === false) && (
             <div className="mb-2 p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
               <div className="flex items-center gap-2">
@@ -684,13 +706,14 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !isBlocked && handleSendMessage()}
-              className="flex-1"
+              className="flex-1 neon-input transition-all duration-300"
               disabled={isBlocked || userSubscription.can_send_message === false}
             />
             <Button 
               onClick={handleSendMessage} 
               size="icon" 
               disabled={!inputValue.trim() || isBlocked || userSubscription.can_send_message === false}
+              className={`${isSendingMessage ? 'send-button-click' : ''} ${inputValue.trim() ? 'send-button-pulse' : ''} transition-all duration-300`}
             >
               <Icon name="Send" size={20} />
             </Button>
