@@ -15,6 +15,8 @@ import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
+const AUTH_CACHE_TIME = 60 * 60 * 1000;
+
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -22,7 +24,24 @@ const App = () => {
   const [ageVerified, setAgeVerified] = useState(false);
 
   useEffect(() => {
-    setIsCheckingAuth(false);
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    const lastCheck = localStorage.getItem('last_auth_check');
+    const cachedUser = localStorage.getItem('user_data');
+    const now = Date.now();
+    
+    if (lastCheck && cachedUser && now - parseInt(lastCheck) < AUTH_CACHE_TIME) {
+      setIsAuthenticated(true);
+      setUserData(JSON.parse(cachedUser));
+      setIsCheckingAuth(false);
+    } else {
+      checkAuth();
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -48,14 +67,18 @@ const App = () => {
       if (response.ok && data.valid) {
         setIsAuthenticated(true);
         setUserData(data.user);
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        localStorage.setItem('last_auth_check', Date.now().toString());
       } else {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
+        localStorage.removeItem('last_auth_check');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
+      localStorage.removeItem('last_auth_check');
     } finally {
       setIsCheckingAuth(false);
     }
@@ -64,11 +87,14 @@ const App = () => {
   const handleLoginSuccess = (token: string, user: any) => {
     setIsAuthenticated(true);
     setUserData(user);
+    localStorage.setItem('user_data', JSON.stringify(user));
+    localStorage.setItem('last_auth_check', Date.now().toString());
   };
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
+    localStorage.removeItem('last_auth_check');
     setIsAuthenticated(false);
     setUserData(null);
   };
