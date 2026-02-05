@@ -117,7 +117,7 @@ interface IndexProps {
   onLogout: () => void;
 }
 
-const SUBSCRIPTION_CACHE_TIME = 10 * 1000;
+const SUBSCRIPTION_CACHE_TIME = 60 * 1000; // 60 секунд кэш
 
 const Index = ({ userData, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState('gallery');
@@ -148,6 +148,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [deniedGirlId, setDeniedGirlId] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const debounceTimerRef = useState<NodeJS.Timeout | null>(null)[0];
 
   const checkSubscription = async (userId: string, force: boolean = false) => {
     const now = Date.now();
@@ -156,6 +157,24 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     if (!force && lastCheck && now - parseInt(lastCheck) < SUBSCRIPTION_CACHE_TIME) {
       return userSubscription;
     }
+    
+    // Debounce для force=true вызовов (300ms)
+    if (force && debounceTimerRef) {
+      clearTimeout(debounceTimerRef);
+      return new Promise((resolve) => {
+        const timer = setTimeout(async () => {
+          const result = await performSubscriptionCheck(userId);
+          resolve(result);
+        }, 300);
+        Object.assign(debounceTimerRef, timer);
+      });
+    }
+    
+    return performSubscriptionCheck(userId);
+  };
+  
+  const performSubscriptionCheck = async (userId: string) => {
+    const now = Date.now();
     
     try {
       const response = await fetch(
