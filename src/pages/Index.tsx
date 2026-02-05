@@ -762,30 +762,6 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                       </div>
                     </a>
-
-                    <a href="tel:+79614009996" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Icon name="Phone" size={18} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Телефон</p>
-                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">+7 961 400-99-96</p>
-                        </div>
-                      </div>
-                    </a>
-
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                          <Icon name="MapPin" size={18} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Адрес</p>
-                          <p className="text-sm font-semibold">123298</p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
