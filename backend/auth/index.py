@@ -50,7 +50,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         elif method == 'GET':
             params = event.get('queryStringParameters', {}) or {}
             
-            if 'subscription' in params:
+            if 'full' in params:
+                return handle_get_full_data(params)
+            elif 'subscription' in params:
                 return handle_check_subscription(params)
             elif 'messages' in params:
                 return handle_get_messages(params)
@@ -607,3 +609,31 @@ def handle_get_active_chats(params: Dict[str, str]) -> Dict[str, Any]:
     
     except Exception as e:
         return error_response(500, str(e))
+
+def handle_get_full_data(params: Dict[str, str]) -> Dict[str, Any]:
+    '''Объединённый запрос: subscription + stats + active_chats одним запросом'''
+    user_id = params.get('user_id')
+    
+    if not user_id:
+        return error_response(400, 'Missing user_id')
+    
+    # Получаем subscription
+    subscription_response = handle_check_subscription(params)
+    subscription_body = json.loads(subscription_response['body'])
+    
+    # Получаем stats
+    stats_response = handle_get_stats(params)
+    stats_body = json.loads(stats_response['body'])
+    
+    # Получаем active_chats
+    chats_response = handle_get_active_chats(params)
+    chats_body = json.loads(chats_response['body'])
+    
+    # Объединяем результат
+    result = {
+        **subscription_body,
+        'stats': stats_body.get('stats', []),
+        'active_chats': chats_body.get('active_chats', [])
+    }
+    
+    return success_response(result)

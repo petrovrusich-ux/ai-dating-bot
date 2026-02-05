@@ -159,7 +159,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     
     try {
       const response = await fetch(
-        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?subscription=true&user_id=${userId}`
+        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?full=true&user_id=${userId}`
       );
       const data = await response.json();
       
@@ -177,23 +177,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         limit_reset_time: data.limit_reset_time || null,
       });
       
-      localStorage.setItem('last_subscription_check', now.toString());
-      setLastSubscriptionCheck(now);
-      
-      return data;
-    } catch (error) {
-      console.error('Subscription check error:', error);
-      return { flirt: false, intimate: false };
-    }
-  };
-
-  const loadGirlStats = async (userId: string) => {
-    try {
-      const response = await fetch(
-        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?stats=true&user_id=${userId}`
-      );
-      const data = await response.json();
-      
+      // Обновляем stats и active_chats из того же ответа
       if (data.stats && Array.isArray(data.stats)) {
         const statsMap: Record<string, { total_messages: number; relationship_level: number }> = {};
         data.stats.forEach((stat: any) => {
@@ -204,17 +188,6 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         });
         setGirlStats(statsMap);
       }
-    } catch (error) {
-      console.error('Stats loading error:', error);
-    }
-  };
-
-  const loadActiveChats = async (userId: string) => {
-    try {
-      const response = await fetch(
-        `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?active_chats=true&user_id=${userId}`
-      );
-      const data = await response.json();
       
       if (data.active_chats && Array.isArray(data.active_chats)) {
         const chats = data.active_chats
@@ -231,10 +204,18 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           .filter((g: Girl | null) => g !== null);
         setActiveChats(chats);
       }
+      
+      localStorage.setItem('last_subscription_check', now.toString());
+      setLastSubscriptionCheck(now);
+      
+      return data;
     } catch (error) {
-      console.error('Active chats loading error:', error);
+      console.error('Subscription check error:', error);
+      return { flirt: false, intimate: false };
     }
   };
+
+
 
   useEffect(() => {
     updatePageMeta(
@@ -254,8 +235,6 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     }
     
     checkSubscription(userId, true);
-    loadGirlStats(userId);
-    loadActiveChats(userId);
   }, []);
 
   // Локальный таймер обратного отсчёта
@@ -323,8 +302,6 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const handleCloseChat = () => {
     setShowChat(false);
     setSelectedGirl(null);
-    loadGirlStats(userId);
-    loadActiveChats(userId);
     checkSubscription(userId, true);
   };
 
@@ -351,8 +328,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       if (data.success) {
         setShowChat(false);
         setSelectedGirl(null);
-        loadGirlStats(userId);
-        loadActiveChats(userId);
+        checkSubscription(userId, true);
       }
     } catch (error) {
       console.error('Delete chat error:', error);
