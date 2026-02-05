@@ -112,6 +112,15 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                 cur.close()
                 conn.close()
                 return {'allowed': False, 'total_messages': total_messages, 'limit': 50, 'reason': 'flirt_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            
+            # Обнуляем limit_reset_time, если лимит не достигнут (таймер не показывается)
+            if limit_reset_time:
+                cur.execute(
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                    (user_id,)
+                )
+                conn.commit()
+            
             cur.close()
             conn.close()
             return {'allowed': True, 'total_messages': total_messages, 'limit': 50, 'limit_reset_time': None}
@@ -131,6 +140,15 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                 cur.close()
                 conn.close()
                 return {'allowed': False, 'total_messages': total_messages, 'limit': 20, 'reason': 'free_limit', 'limit_reset_time': limit_reset_time.isoformat() if limit_reset_time else None}
+            
+            # Обнуляем limit_reset_time, если лимит не достигнут (таймер не показывается)
+            if limit_reset_time:
+                cur.execute(
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                    (user_id,)
+                )
+                conn.commit()
+            
             cur.close()
             conn.close()
             return {'allowed': True, 'total_messages': total_messages, 'limit': 20, 'limit_reset_time': None}
