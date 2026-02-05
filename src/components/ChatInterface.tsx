@@ -580,7 +580,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                           <img
                             src={message.image}
                             alt="NSFW content"
-                            className="w-64 h-64 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                            className="w-64 h-64 object-contain rounded-xl cursor-pointer hover:opacity-90 transition-opacity bg-muted"
                             onClick={() => window.open(message.image, '_blank')}
                           />
                           <Badge

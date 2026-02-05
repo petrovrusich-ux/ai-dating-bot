@@ -57,7 +57,7 @@ const GirlSelectionModal = ({
                   <img 
                     src={girl.image} 
                     alt={girl.name}
-                    className="w-24 h-24 rounded-lg object-cover"
+                    className="w-24 h-24 rounded-lg object-contain bg-muted"
                   />
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
