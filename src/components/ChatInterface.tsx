@@ -650,30 +650,6 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
         </CardContent>
 
         <div className="border-t border-border p-4 space-y-3">
-          {currentLevel === 2 && girl.unlocked && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRequestPhoto}
-                disabled={isGeneratingImage}
-                className="border-destructive/50 text-destructive hover:bg-destructive/10"
-              >
-                {isGeneratingImage ? (
-                  <>
-                    <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                    Генерация...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Camera" size={16} className="mr-2" />
-                    Попросить фото 🔥
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-          
           {(isBlocked || userSubscription.can_send_message === false) && (
             <div className="mb-2 p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
               <div className="flex items-center gap-2">
