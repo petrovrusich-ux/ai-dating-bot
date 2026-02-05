@@ -42,16 +42,15 @@ def check_message_limit(user_id: str, girl_id: Optional[str] = None) -> Dict[str
                 limit_reset_time = limit_reset_time.replace(tzinfo=timezone.utc)
             
             if now >= limit_reset_time:
-                # Сбрасываем счетчик и устанавливаем новое время сброса (завтра 00:00 UTC)
-                next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                # Сбрасываем счетчик и обнуляем limit_reset_time (таймер не показывается до первого сообщения)
                 cur.execute(
-                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = %s, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
-                    (next_midnight, user_id)
+                    "UPDATE t_p77610913_ai_dating_bot.user_message_stats SET total_messages = 0, limit_reset_time = NULL, updated_at = CURRENT_TIMESTAMP WHERE user_id = %s",
+                    (user_id,)
                 )
                 conn.commit()
                 total_messages = 0
-                limit_reset_time = next_midnight
-                print(f"✅ Лимит сброшен для user_id={user_id}, новое время сброса: {next_midnight}")
+                limit_reset_time = None
+                print(f"✅ Лимит сброшен для user_id={user_id}")
         
         cur.execute(
             "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s LIMIT 1",
