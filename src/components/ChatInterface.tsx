@@ -46,6 +46,7 @@ interface ChatInterfaceProps {
   userId: string;
   onDeleteChat?: (girlId: string) => void;
   onShowSubscription?: () => void;
+  onMessageSent?: () => void;
 }
 
 const getLevelInfo = (level: number, messagesCount: number) => {
@@ -108,7 +109,7 @@ const getAIResponse = (
   };
 };
 
-const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false, can_send_message: true }, userId, onDeleteChat, onShowSubscription }: ChatInterfaceProps) => {
+const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intimate: false, can_send_message: true }, userId, onDeleteChat, onShowSubscription, onMessageSent }: ChatInterfaceProps) => {
   const getMaxAllowedLevel = () => {
     if (userSubscription.intimate) return 2;
     if (userSubscription.flirt) return 1;
@@ -469,6 +470,10 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       setMessages((prev) => [...prev, aiResponse]);
       saveMessage(aiResponse);
       setCurrentMessagesCount((prev) => prev + 1);
+      
+      if (onMessageSent) {
+        onMessageSent();
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       // Remove typing indicator and show fallback
@@ -477,6 +482,10 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
       setMessages((prev) => [...prev, fallbackResponse]);
       saveMessage(fallbackResponse);
       setCurrentMessagesCount((prev) => prev + 1);
+      
+      if (onMessageSent) {
+        onMessageSent();
+      }
     }
   };
 

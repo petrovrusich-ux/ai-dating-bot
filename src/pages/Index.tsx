@@ -117,6 +117,8 @@ interface IndexProps {
   onLogout: () => void;
 }
 
+const SUBSCRIPTION_CACHE_TIME = 10 * 1000;
+
 const Index = ({ userData, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState('gallery');
   const [selectedGirl, setSelectedGirl] = useState<Girl | null>(null);
@@ -136,7 +138,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     has_all_girls?: boolean;
     limit_reset_time?: string | null;
   }>(userData?.subscription || { flirt: false, intimate: false });
-  const userId = userData?.user_id || 'user_' + Date.now();
+  const userId = useState(() => userData?.user_id || 'user_' + Date.now())[0];
+  const [lastSubscriptionCheck, setLastSubscriptionCheck] = useState<number>(0);
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
   const [activeChats, setActiveChats] = useState<Girl[]>([]);
   const [showGirlSelection, setShowGirlSelection] = useState(false);
@@ -146,7 +149,13 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   const [deniedGirlId, setDeniedGirlId] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const checkSubscription = async (userId: string) => {
+  const checkSubscription = async (userId: string, force: boolean = false) => {
+    const now = Date.now();
+    
+    if (!force && now - lastSubscriptionCheck < SUBSCRIPTION_CACHE_TIME) {
+      return userSubscription;
+    }
+    
     try {
       const response = await fetch(
         `https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1?subscription=true&user_id=${userId}`
@@ -166,6 +175,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         has_all_girls: data.has_all_girls || false,
         limit_reset_time: data.limit_reset_time || null,
       });
+      
+      setLastSubscriptionCheck(now);
       
       return data;
     } catch (error) {
@@ -235,17 +246,17 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     
     if (paymentStatus === 'success') {
       setTimeout(() => {
-        checkSubscription(userId);
+        checkSubscription(userId, true);
         window.history.replaceState({}, '', '/');
       }, 1000);
     }
     
-    checkSubscription(userId);
+    checkSubscription(userId, true);
     loadGirlStats(userId);
     loadActiveChats(userId);
-  }, [userId]);
+  }, []);
 
-  // Автоматическое обновление таймера каждую секунду
+  // Локальный таймер обратного отсчёта
   useEffect(() => {
     if (userSubscription.limit_reset_time) {
       const interval = setInterval(() => {
@@ -254,16 +265,16 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         const resetTime = new Date(userSubscription.limit_reset_time);
         const diff = resetTime.getTime() - now.getTime();
         
-        // Если время вышло, обновляем подписку
+        // Если время вышло, обновляем подписку принудительно
         if (diff <= 0) {
-          checkSubscription(userId);
+          checkSubscription(userId, true);
           clearInterval(interval);
         }
       }, 1000);
       
       return () => clearInterval(interval);
     }
-  }, [userSubscription.limit_reset_time, userId]);
+  }, [userSubscription.limit_reset_time]);
 
   const handleOpenChat = async (girl: Girl) => {
     const subData = await checkSubscription(userId);
@@ -312,6 +323,11 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     setSelectedGirl(null);
     loadGirlStats(userId);
     loadActiveChats(userId);
+    checkSubscription(userId, true);
+  };
+
+  const handleMessageSent = () => {
+    checkSubscription(userId, true);
   };
 
   const handleDeleteChat = async (girlId: string) => {
@@ -966,6 +982,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           userId={userId}
           onDeleteChat={handleDeleteChat}
           onShowSubscription={() => setActiveTab('subscription')}
+          onMessageSent={handleMessageSent}
         />
       )}
 
