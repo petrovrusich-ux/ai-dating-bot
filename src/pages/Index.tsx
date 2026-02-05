@@ -935,7 +935,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Icon name="Check" size={14} className="text-white" />
                         </div>
-                        <span className="text-sm font-medium">🔥 Возможность попросить фото</span>
+                        <span className="text-sm font-medium">🔥 Быстрый ответ поддержки</span>
                       </li>
                       <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
