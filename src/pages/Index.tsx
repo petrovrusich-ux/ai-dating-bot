@@ -151,8 +151,9 @@ const Index = ({ userData, onLogout }: IndexProps) => {
 
   const checkSubscription = async (userId: string, force: boolean = false) => {
     const now = Date.now();
+    const lastCheck = localStorage.getItem('last_subscription_check');
     
-    if (!force && now - lastSubscriptionCheck < SUBSCRIPTION_CACHE_TIME) {
+    if (!force && lastCheck && now - parseInt(lastCheck) < SUBSCRIPTION_CACHE_TIME) {
       return userSubscription;
     }
     
@@ -176,6 +177,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         limit_reset_time: data.limit_reset_time || null,
       });
       
+      localStorage.setItem('last_subscription_check', now.toString());
       setLastSubscriptionCheck(now);
       
       return data;
