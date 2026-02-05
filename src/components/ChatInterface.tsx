@@ -142,6 +142,11 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   const [isBlocked, setIsBlocked] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const levelInfo = getLevelInfo(currentLevel, currentMessagesCount);
 
@@ -235,9 +240,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
   }, [userId, girl.id]);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -503,9 +506,9 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a14]/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-4xl h-[90vh] flex flex-col bg-[#111127] border-primary/20">
-        <CardHeader className="border-b border-primary/20 p-4 bg-[#111127]">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+      <Card className="w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl">
+        <CardHeader className="border-b border-border/50 p-4 bg-card/95 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12">
@@ -546,8 +549,8 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Прогресс отношений</span>
-              <span className="text-muted-foreground">
-                <span className="neon-counter">{currentMessagesCount}</span> {levelInfo.description.includes('/') ? levelInfo.description.substring(levelInfo.description.indexOf('/')) : 'сообщений'}
+              <span className="text-muted-foreground font-medium">
+                {currentMessagesCount} {levelInfo.description.includes('/') ? levelInfo.description.substring(levelInfo.description.indexOf('/')) : 'сообщений'}
               </span>
             </div>
             <Progress value={levelInfo.progress} className="h-2" />
@@ -561,14 +564,13 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
 
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden p-0 bg-[#0a0a14]">
-          <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+        <CardContent className="flex-1 overflow-hidden p-0">
+          <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} message-slide-in`}
-                  style={{ animationDelay: `${Math.min(index * 0.05, 0.3)}s` }}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} message-appear`}
                 >
                   {message.sender === 'ai' && message.text !== 'typing' && (
                     <Avatar className="h-8 w-8 mr-2">
@@ -579,26 +581,26 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                   <div
                     className={`max-w-[70%] ${
                       message.text === 'typing'
-                        ? 'px-4 py-3'
+                        ? 'typing-indicator chat-bubble-ai'
                         : message.sender === 'user'
-                        ? 'neon-user-message text-white px-4 py-2.5'
+                        ? 'chat-bubble-user text-white px-4 py-2.5 shadow-sm'
                         : message.image
                         ? 'space-y-2'
                         : message.isNSFW
-                        ? 'neon-ai-message text-foreground px-4 py-2.5 border-red-500/30'
-                        : 'neon-ai-message text-foreground px-4 py-2.5'
+                        ? 'chat-bubble-ai text-foreground px-4 py-2.5 border-red-500/20'
+                        : 'chat-bubble-ai text-foreground px-4 py-2.5'
                     }`}
                   >
                     {message.text === 'typing' ? (
-                      <div className="typing-dots">
+                      <div className="flex gap-1.5">
                         <div className="typing-dot"></div>
                         <div className="typing-dot"></div>
                         <div className="typing-dot"></div>
                       </div>
                     ) : message.imageLoading ? (
-                      <div className="neon-ai-message px-4 py-2 space-y-3">
+                      <div className="chat-bubble-ai px-4 py-2 space-y-3">
                         <p className="text-sm">{message.text}</p>
-                        <div className="w-64 h-64 bg-background/50 rounded-xl flex items-center justify-center border border-primary/20">
+                        <div className="w-64 h-64 bg-muted/30 rounded-xl flex items-center justify-center border border-border">
                           <div className="text-center space-y-2">
                             <Icon name="Loader2" size={32} className="animate-spin text-primary mx-auto" />
                             <p className="text-xs text-muted-foreground">Генерация фото...</p>
@@ -611,7 +613,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                           <img
                             src={message.image}
                             alt="NSFW content"
-                            className="w-64 h-64 object-contain rounded-xl cursor-pointer hover:opacity-90 transition-all duration-300 bg-muted border border-pink-500/20 hover:border-pink-500/40"
+                            className="w-64 h-64 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity bg-muted"
                             onClick={() => window.open(message.image, '_blank')}
                           />
                           <Badge
@@ -621,7 +623,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                             18+ NSFW
                           </Badge>
                         </div>
-                        <div className="neon-ai-message px-4 py-2">
+                        <div className="chat-bubble-ai px-4 py-2">
                           <p className="text-sm">{message.text}</p>
                           <span className="text-xs opacity-70 mt-1 block">
                             {message.timestamp.toLocaleTimeString('ru-RU', {
@@ -633,7 +635,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm" style={{ textShadow: message.sender === 'user' ? '0 1px 2px rgba(0,0,0,0.3)' : 'none' }}>{message.text}</p>
+                        <p className="text-sm leading-relaxed">{message.text}</p>
                         <span className="text-xs opacity-70 mt-1 block">
                           {message.timestamp.toLocaleTimeString('ru-RU', {
                             hour: '2-digit',
@@ -645,6 +647,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
 
               {showNSFWWarning && (
                 <Card className="border-destructive bg-destructive/10 animate-scale-in">
@@ -680,7 +683,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
           </ScrollArea>
         </CardContent>
 
-        <div className="neon-divider p-4 space-y-3">
+        <div className="border-t border-border/50 p-4 space-y-3 bg-card/95 backdrop-blur-sm">
           {(isBlocked || userSubscription.can_send_message === false) && (
             <div className="mb-2 p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
               <div className="flex items-center gap-2">
@@ -706,14 +709,14 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !isBlocked && handleSendMessage()}
-              className="flex-1 neon-input transition-all duration-300"
+              className="flex-1 chat-input-modern"
               disabled={isBlocked || userSubscription.can_send_message === false}
             />
             <Button 
               onClick={handleSendMessage} 
               size="icon" 
               disabled={!inputValue.trim() || isBlocked || userSubscription.can_send_message === false}
-              className={`${isSendingMessage ? 'send-button-click' : ''} ${inputValue.trim() ? 'send-button-pulse' : ''} transition-all duration-300`}
+              className="send-button-modern"
             >
               <Icon name="Send" size={20} />
             </Button>

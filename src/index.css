@@ -132,64 +132,62 @@ img {
     }
   }
 
-  /* Неоновые анимации для чата */
-  .message-slide-in {
-    animation: messageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Современный премиум чат */
+  .message-appear {
+    animation: messageAppear 0.3s ease-out;
   }
 
-  @keyframes messageSlideIn {
+  @keyframes messageAppear {
     0% {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(10px) scale(0.95);
     }
     100% {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
-  .neon-user-message {
+  .chat-bubble-user {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px 20px 5px 20px;
-    box-shadow:
-      0 0 15px rgba(102, 126, 234, 0.5),
-      0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 18px 18px 4px 18px;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
-  .neon-user-message:hover {
-    box-shadow:
-      0 0 25px rgba(102, 126, 234, 0.7),
-      0 6px 16px rgba(0, 0, 0, 0.4);
-    transform: translateY(-2px);
+  .chat-bubble-user:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
   }
 
-  .neon-ai-message {
-    background: rgba(30, 30, 46, 0.6);
-    border: 1px solid rgba(244, 114, 182, 0.3);
-    border-radius: 20px 20px 20px 5px;
-    box-shadow: 0 0 10px rgba(244, 114, 182, 0.2);
+  .chat-bubble-ai {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 18px 18px 18px 4px;
     backdrop-filter: blur(10px);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
-  .neon-ai-message:hover {
-    box-shadow: 0 0 20px rgba(244, 114, 182, 0.4);
-    border-color: rgba(244, 114, 182, 0.5);
-    transform: translateY(-2px);
+  .chat-bubble-ai:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .typing-dots {
+  .typing-indicator {
     display: inline-flex;
-    gap: 4px;
+    gap: 6px;
+    padding: 12px 16px;
   }
 
   .typing-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ec4899 0%, #3b82f6 100%);
-    animation: typingDot 1.4s infinite ease-in-out;
+    background: rgba(255, 255, 255, 0.4);
+    animation: typingBounce 1.4s infinite ease-in-out;
   }
 
   .typing-dot:nth-child(1) {
@@ -204,66 +202,47 @@ img {
     animation-delay: 0.4s;
   }
 
-  @keyframes typingDot {
+  @keyframes typingBounce {
     0%,
     60%,
     100% {
-      transform: scale(1);
-      opacity: 0.5;
+      transform: translateY(0);
+      opacity: 0.4;
     }
     30% {
-      transform: scale(1.4);
+      transform: translateY(-8px);
       opacity: 1;
     }
   }
 
-  .send-button-pulse {
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
-    animation: sendPulse 2s ease-in-out infinite;
+  .chat-input-modern {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
   }
 
-  @keyframes sendPulse {
-    0%,
-    100% {
-      box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
-    }
+  .chat-input-modern:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 
-  .send-button-click {
-    animation: sendClick 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  .send-button-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.2s ease;
   }
 
-  @keyframes sendClick {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(0.9);
-    }
-    100% {
-      transform: scale(1);
-    }
+  .send-button-modern:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   }
 
-  .neon-input:focus {
-    outline: none;
-    border-color: rgba(102, 126, 234, 0.6);
-    box-shadow:
-      0 0 15px rgba(102, 126, 234, 0.3),
-      0 0 5px rgba(102, 126, 234, 0.5) inset;
+  .send-button-modern:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
-  .neon-divider {
-    border-top: 1px solid rgba(102, 126, 234, 0.2);
-    box-shadow: 0 -1px 10px rgba(102, 126, 234, 0.1);
-  }
-
-  .neon-counter {
-    color: #667eea;
-    text-shadow: 0 0 8px rgba(102, 126, 234, 0.8);
-    font-weight: 600;
+  .send-button-modern:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
