@@ -48,7 +48,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Определяем сумму в зависимости от плана
+        # Определяем сумму в зависимости от плана (актуальные цены)
         prices = {
             'flirt': 1490,
             'intimate': 2390,
@@ -57,8 +57,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'all_girls_day': 990,
             'one_girl_day': 590
         }
-        amount = prices.get(plan_type, 20)
-        print(f'DEBUG: Price for {plan_type} = {amount}')
+        amount = prices.get(plan_type, 1490)
+        print(f'DEBUG: Creating payment for {plan_type} with amount {amount} RUB')
         
         merchant_id = os.environ['PLATEGA_MERCHANT_ID']
         api_key = os.environ['PLATEGA_API_KEY']
