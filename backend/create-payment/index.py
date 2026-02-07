@@ -5,8 +5,9 @@ from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Создание платежа через Platega.io
-    Принимает: user_id, plan_type (flirt/intimate), amount
+    Создание платежа через Platega.io v2.0
+    Принимает: user_id, plan_type (flirt/intimate/one_girl/all_girls)
+    Цены: Флирт 1490₽, Интим 2390₽, 1 девушка 590₽, Все девушки 990₽
     Возвращает: payment_url для редиректа пользователя
     '''
     method: str = event.get('httpMethod', 'POST')
