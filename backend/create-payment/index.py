@@ -48,14 +48,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Определяем сумму в зависимости от плана (тестовые цены 20₽)
+        # Определяем сумму в зависимости от плана
         prices = {
-            'flirt': 20,
-            'intimate': 20,
-            'one_girl': 20,
-            'all_girls': 20,
-            'all_girls_day': 20,
-            'one_girl_day': 20
+            'flirt': 1490,
+            'intimate': 2390,
+            'one_girl': 590,
+            'all_girls': 990,
+            'all_girls_day': 990,
+            'one_girl_day': 590
         }
         amount = prices.get(plan_type, 20)
         print(f'DEBUG: Price for {plan_type} = {amount}')
