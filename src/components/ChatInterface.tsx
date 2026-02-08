@@ -512,7 +512,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12 ring-2 ring-primary/30">
-                <AvatarImage src={girl.image} alt={girl.name} className="object-contain p-1" />
+                <AvatarImage src={girl.image} alt={girl.name} className="object-cover object-center" />
                 <AvatarFallback>{girl.name[0]}</AvatarFallback>
               </Avatar>
               <div>
