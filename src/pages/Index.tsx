@@ -557,7 +557,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         <div className="flex items-center gap-4">
                           <div className="relative">
                             <Avatar className="h-16 w-16 bg-muted/30">
-                              <AvatarImage src={girl.image} alt={girl.name} className="object-contain" />
+                              <AvatarImage src={girl.image} alt={girl.name} className="object-cover object-center" />
                               <AvatarFallback>{girl.name[0]}</AvatarFallback>
                             </Avatar>
                           </div>
