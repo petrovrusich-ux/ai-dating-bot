@@ -434,29 +434,49 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="gallery" className="flex items-center gap-2">
-              <Icon name="Grid3x3" size={18} />
-              Галерея
-            </TabsTrigger>
-            <TabsTrigger value="chats" className="flex items-center gap-2">
-              <Icon name="MessageCircle" size={18} />
-              Диалоги
-              {activeChats.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {activeChats.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Icon name="User" size={18} />
-              Профиль
-            </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex items-center gap-2">
-              <Icon name="Crown" size={18} />
-              Тарифы
-            </TabsTrigger>
-          </TabsList>
+          <div className="relative mb-12">
+            <TabsList className="grid w-full grid-cols-4 h-auto p-2 bg-card/50 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl">
+              <TabsTrigger 
+                value="gallery" 
+                className="relative flex flex-col items-center gap-2 py-4 px-6 rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all duration-300 hover:scale-105 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl opacity-0 group-data-[state=active]:opacity-100 blur-xl transition-opacity" />
+                <Icon name="Grid3x3" size={24} className="relative z-10" />
+                <span className="relative z-10 text-sm font-semibold">Галерея</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="chats" 
+                className="relative flex flex-col items-center gap-2 py-4 px-6 rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all duration-300 hover:scale-105 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl opacity-0 group-data-[state=active]:opacity-100 blur-xl transition-opacity" />
+                <div className="relative z-10 flex items-center gap-2">
+                  <Icon name="MessageCircle" size={24} />
+                  {activeChats.length > 0 && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white animate-pulse">
+                      {activeChats.length}
+                    </div>
+                  )}
+                </div>
+                <span className="relative z-10 text-sm font-semibold">Диалоги</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="profile" 
+                className="relative flex flex-col items-center gap-2 py-4 px-6 rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all duration-300 hover:scale-105 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl opacity-0 group-data-[state=active]:opacity-100 blur-xl transition-opacity" />
+                <Icon name="User" size={24} className="relative z-10" />
+                <span className="relative z-10 text-sm font-semibold">Профиль</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="subscription" 
+                className="relative flex flex-col items-center gap-2 py-4 px-6 rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-xl transition-all duration-300 hover:scale-105 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl opacity-0 group-data-[state=active]:opacity-100 blur-xl transition-opacity" />
+                <Icon name="Crown" size={24} className="relative z-10" />
+                <span className="relative z-10 text-sm font-semibold">Тарифы</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="gallery" className="animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
