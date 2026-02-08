@@ -585,58 +585,96 @@ const Index = ({ userData, onLogout }: IndexProps) => {
           </TabsContent>
 
           <TabsContent value="profile" className="animate-fade-in">
-            <div className="max-w-2xl mx-auto space-y-6">
-              <Card className="relative overflow-hidden border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
-                <CardContent className="relative p-6">
-                  <div className="flex flex-col md:flex-row items-center md:items-start justify-between mb-6 gap-6">
-                    <div className="flex flex-col md:flex-row items-center gap-6">
-                      <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-accent rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse-glow" />
-                        <Avatar className="relative h-28 w-28 ring-4 ring-background/50 shadow-2xl">
-                          <AvatarFallback className="text-3xl bg-gradient-to-br from-primary via-secondary to-accent text-white font-bold">
-                            {userData?.name?.charAt(0).toUpperCase() || 'А'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div className="text-center md:text-left">
-                        <h2 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
+            <div className="max-w-5xl mx-auto space-y-8">
+              {/* Hero Header */}
+              <div className="relative overflow-hidden rounded-3xl border border-border/30">
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 opacity-90" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC41IiBvcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
+                
+                <CardContent className="relative p-8 md:p-12">
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+                    {/* Avatar with glow effect */}
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-white/40 rounded-full blur-3xl group-hover:blur-2xl transition-all duration-300" />
+                      <Avatar className="relative h-32 w-32 md:h-40 md:w-40 ring-8 ring-white/30 shadow-2xl">
+                        <AvatarFallback className="text-5xl md:text-6xl bg-gradient-to-br from-white to-white/80 text-violet-600 font-black">
+                          {userData?.name?.charAt(0).toUpperCase() || 'А'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    
+                    {/* User info */}
+                    <div className="flex-1 text-center md:text-left text-white space-y-4">
+                      <div className="space-y-2">
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">
                           {userData?.name || 'Александр'}
-                        </h2>
-                        <p className="text-muted-foreground">{userData?.email || 'email@example.com'}</p>
+                        </h1>
+                        <p className="text-lg md:text-xl text-white/80 font-medium">
+                          {userData?.email || 'email@example.com'}
+                        </p>
+                      </div>
+                      
+                      {/* Quick stats */}
+                      <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
+                          <Icon name="MessageCircle" size={18} />
+                          <span className="text-sm font-semibold">{userSubscription.total_messages || 0} сообщений</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
+                          <Icon name="Heart" size={18} />
+                          <span className="text-sm font-semibold">{activeChats.length} активных чатов</span>
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Logout button */}
                     <Button 
-                      variant="outline" 
                       onClick={onLogout} 
-                      className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all group"
+                      className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/30 hover:border-white/50 backdrop-blur-sm transition-all px-6 py-6 text-lg font-semibold rounded-2xl group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Icon name="LogOut" size={16} className="text-white" />
-                      </div>
+                      <Icon name="LogOut" size={20} className="mr-2 group-hover:scale-110 transition-transform" />
                       Выйти
                     </Button>
                   </div>
+                </CardContent>
+              </div>
 
-                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/50 p-5">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5" />
-                    <div className="relative flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center">
-                        <Icon name="Crown" size={20} className="text-white" />
-                      </div>
-                      <span className="font-semibold text-lg">Статус тарифа</span>
+              {/* Subscription Status Card */}
+              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-red-500/10" />
+                <CardContent className="relative p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-2xl">
+                      <Icon name="Crown" size={28} className="text-white" />
                     </div>
+                    <div>
+                      <h3 className="text-2xl font-black">Статус подписки</h3>
+                      <p className="text-sm text-muted-foreground">Управляйте вашим тарифом</p>
+                    </div>
+                  </div>
+                  <div>
                     {userSubscription.purchase_expires && userSubscription.purchase_type ? (
-                      <div className="relative space-y-3">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Разовая покупка:</span>
-                          <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg">
+                      <div className="relative space-y-4">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 to-cyan-600/10 border border-blue-500/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                              <Icon name="ShoppingBag" size={20} className="text-white" />
+                            </div>
+                            <span className="font-semibold">Разовая покупка</span>
+                          </div>
+                          <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold">
                             {userSubscription.purchase_type === 'one_girl' ? '👤 Одна девушка' : '👥 Все девушки'}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Осталось времени:</span>
-                          <span className="text-sm font-semibold text-primary">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-violet-600/10 to-purple-600/10 border border-violet-500/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                              <Icon name="Timer" size={20} className="text-white" />
+                            </div>
+                            <span className="font-semibold">Осталось времени</span>
+                          </div>
+                          <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
                             {(() => {
                               const now = new Date();
                               const expires = new Date(userSubscription.purchase_expires);
@@ -654,21 +692,31 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                       </div>
                     ) : (userSubscription.flirt || userSubscription.intimate) && userSubscription.subscription_end && !userSubscription.subscription_end.includes('2099') ? (
-                      <div className="relative space-y-3">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Активный тариф:</span>
+                      <div className="relative space-y-4">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-pink-600/10 to-red-600/10 border border-pink-500/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center">
+                              <Icon name="Sparkles" size={20} className="text-white" />
+                            </div>
+                            <span className="font-semibold">Активный тариф</span>
+                          </div>
                           <Badge 
                             className={userSubscription.intimate 
-                              ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 shadow-lg" 
-                              : "bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 shadow-lg"
+                              ? "bg-gradient-to-r from-red-600 to-orange-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold" 
+                              : "bg-gradient-to-r from-pink-600 to-red-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold"
                             }
                           >
                             {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/30">
-                          <span className="text-sm font-medium text-muted-foreground">Действует до:</span>
-                          <span className="text-sm font-semibold">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-emerald-600/10 to-teal-600/10 border border-emerald-500/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                              <Icon name="Calendar" size={20} className="text-white" />
+                            </div>
+                            <span className="font-semibold">Действует до</span>
+                          </div>
+                          <span className="text-lg font-bold">
                             {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
                               day: 'numeric', 
                               month: 'long',
@@ -679,20 +727,24 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground p-3 rounded-lg bg-background/30">Тариф не подключён</p>
+                      <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border-2 border-dashed border-border/50 text-center">
+                        <Icon name="AlertCircle" size={32} className="mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-lg font-semibold text-muted-foreground">Тариф не подключён</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">Выберите тариф для доступа к функциям</p>
+                      </div>
                     )}
                     
                     {/* Таймер обнуления лимита - скрывается при активных разовых тарифах */}
                     {!userSubscription.purchase_expires && userSubscription.limit_reset_time && (
-                      <div className="relative mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30">
+                      <div className="relative mt-6 p-6 rounded-2xl bg-gradient-to-r from-indigo-600/10 to-blue-600/10 border border-indigo-500/30">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center animate-pulse">
-                              <Icon name="Clock" size={20} className="text-white" />
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center animate-pulse shadow-lg">
+                              <Icon name="Clock" size={24} className="text-white" />
                             </div>
-                            <span className="text-sm font-medium">До обновления лимита:</span>
+                            <span className="text-base font-bold">До обновления лимита</span>
                           </div>
-                          <span className="text-lg font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                          <span className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
                             {(() => {
                               const resetTime = new Date(userSubscription.limit_reset_time);
                               const diff = resetTime.getTime() - currentTime.getTime();
@@ -714,64 +766,94 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                 </CardContent>
               </Card>
 
-              <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-xl">
-                <CardContent className="p-6">
-                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                      <Icon name="Shield" size={20} className="text-white" />
+              {/* Security & Privacy Card */}
+              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10" />
+                <CardContent className="relative p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl">
+                      <Icon name="Shield" size={28} className="text-white" />
                     </div>
-                    Безопасность и конфиденциальность
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <span className="text-xl">🤖</span>
-                      <p className="text-sm">Все персонажи созданы искусственным интеллектом</p>
+                    <div>
+                      <h3 className="text-2xl font-black">Безопасность</h3>
+                      <p className="text-sm text-muted-foreground">Ваши данные под защитой</p>
                     </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <span className="text-xl">🔞</span>
-                      <p className="text-sm">Строгая проверка возраста 18+</p>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="text-2xl">🤖</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">AI персонажи</p>
+                        <p className="text-sm text-muted-foreground">Все созданы ИИ</p>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <span className="text-xl">🔒</span>
-                      <p className="text-sm">Ваши данные полностью конфиденциальны</p>
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="text-2xl">🔞</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">Возраст 18+</p>
+                        <p className="text-sm text-muted-foreground">Строгая проверка</p>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                      <span className="text-xl">🗑️</span>
-                      <p className="text-sm">Возможность удалить аккаунт в любой момент</p>
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="text-2xl">🔒</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">Конфиденциально</p>
+                        <p className="text-sm text-muted-foreground">Данные защищены</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="text-2xl">🗑️</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">Удаление</p>
+                        <p className="text-sm text-muted-foreground">В любой момент</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-border/50 bg-card/80 backdrop-blur-xl shadow-xl">
-                <CardContent className="p-6">
-                  <h3 className="font-heading font-semibold text-lg mb-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                      <Icon name="Phone" size={20} className="text-white" />
+              {/* Contacts Card */}
+              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-indigo-500/10" />
+                <CardContent className="relative p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-2xl">
+                      <Icon name="Phone" size={28} className="text-white" />
                     </div>
-                    Контакты
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-3 mb-4">
-                    <a href="mailto:airomance@yandex.ru" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Icon name="Mail" size={18} className="text-white" />
+                    <div>
+                      <h3 className="text-2xl font-black">Контакты</h3>
+                      <p className="text-sm text-muted-foreground">Связь с нами</p>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <a href="mailto:airomance@yandex.ru" className="group p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                          <Icon name="Mail" size={24} className="text-white" />
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Почта</p>
-                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">airomance@yandex.ru</p>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Почта</p>
+                          <p className="text-base font-bold group-hover:text-primary transition-colors">airomance@yandex.ru</p>
                         </div>
                       </div>
                     </a>
 
-                    <a href="https://t.me/airomance1" target="_blank" rel="noopener noreferrer" className="group p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Icon name="MessageCircle" size={18} className="text-white" />
+                    <a href="https://t.me/airomance1" target="_blank" rel="noopener noreferrer" className="group p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-blue-500/50 transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                          <Icon name="MessageCircle" size={24} className="text-white" />
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-0.5">Telegram</p>
-                          <p className="text-sm font-semibold group-hover:text-primary transition-colors">@airomance1</p>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Telegram</p>
+                          <p className="text-base font-bold group-hover:text-blue-500 transition-colors">@airomance1</p>
                         </div>
                       </div>
                     </a>
