@@ -902,7 +902,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                       Интим
                     </h3>
                     <div className="mb-6">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">2390 ₽</span>
+                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">1990 ₽</span>
                       <span className="text-muted-foreground text-lg"> / неделя</span>
                     </div>
                     <ul className="space-y-3 mb-6">
@@ -934,7 +934,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     <Button 
                       className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
                       size="lg"
-                      onClick={() => handleSubscribe('intimate', 2390)}
+                      onClick={() => handleSubscribe('intimate', 1990)}
                       disabled={isProcessingPayment || !agreedToTerms}
                     >
                       {isProcessingPayment ? '⏳ Обработка...' : '🔥 Подключить тариф'}

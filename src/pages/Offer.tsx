@@ -45,7 +45,7 @@ const Offer = () => {
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
                 <li><strong>Флирт</strong> - 490₽ за 7 дней, до 50 сообщений в день</li>
-                <li><strong>Интим</strong> - 1490₽ за 7 дней, безлимитное общение</li>
+                <li><strong>Интим</strong> - 1990₽ за 7 дней, безлимитное общение</li>
                 <li><strong>Одна девушка</strong> - 399₽ за 24 часа с одним персонажем</li>
                 <li><strong>Все девушки</strong> - 799₽ за 24 часа со всеми персонажами</li>
               </ul>
