@@ -113,11 +113,11 @@ const getUserSubscriptionInfo = (subscription: { flirt: boolean; intimate: boole
 };
 
 interface IndexProps {
-  userData: any;
+  userData: Record<string, unknown>;
   onLogout: () => void;
 }
 
-const SUBSCRIPTION_CACHE_TIME = 60 * 1000; // 60 секунд кэш
+const SUBSCRIPTION_CACHE_TIME = 60 * 1000;
 
 const Index = ({ userData, onLogout }: IndexProps) => {
   const [activeTab, setActiveTab] = useState('gallery');
@@ -137,8 +137,8 @@ const Index = ({ userData, onLogout }: IndexProps) => {
     purchased_girls?: string[];
     has_all_girls?: boolean;
     limit_reset_time?: string | null;
-  }>(userData?.subscription || { flirt: false, intimate: false });
-  const userId = useState(() => userData?.user_id || 'user_' + Date.now())[0];
+  }>(userData?.subscription as typeof userSubscription || { flirt: false, intimate: false });
+  const userId = useState(() => (userData?.user_id as string) || 'user_' + Date.now())[0];
   const [lastSubscriptionCheck, setLastSubscriptionCheck] = useState<number>(0);
   const [girlStats, setGirlStats] = useState<Record<string, { total_messages: number; relationship_level: number }>>({});
   const [activeChats, setActiveChats] = useState<Girl[]>([]);
@@ -158,7 +158,6 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       return userSubscription;
     }
     
-    // Debounce для force=true вызовов (300ms)
     if (force && debounceTimerRef) {
       clearTimeout(debounceTimerRef);
       return new Promise((resolve) => {
@@ -196,13 +195,12 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         limit_reset_time: data.limit_reset_time || null,
       });
       
-      // Обновляем stats и active_chats из того же ответа
       if (data.stats && Array.isArray(data.stats)) {
         const statsMap: Record<string, { total_messages: number; relationship_level: number }> = {};
-        data.stats.forEach((stat: any) => {
-          statsMap[stat.girl_id] = {
-            total_messages: stat.total_messages,
-            relationship_level: stat.relationship_level,
+        data.stats.forEach((stat: Record<string, unknown>) => {
+          statsMap[stat.girl_id as string] = {
+            total_messages: stat.total_messages as number,
+            relationship_level: stat.relationship_level as number,
           };
         });
         setGirlStats(statsMap);
@@ -210,7 +208,7 @@ const Index = ({ userData, onLogout }: IndexProps) => {
       
       if (data.active_chats && Array.isArray(data.active_chats)) {
         const chats = data.active_chats
-          .map((chat: any) => {
+          .map((chat: Record<string, unknown>) => {
             const girl = mockGirls.find(g => g.id === chat.girl_id);
             if (!girl) return null;
             return {
@@ -239,340 +237,228 @@ const Index = ({ userData, onLogout }: IndexProps) => {
   useEffect(() => {
     updatePageMeta(
       "AI Romance — Виртуальные отношения с искусственным интеллектом",
-      "Почувствуй искру между нами! Общайся с уникальными AI-персонажами, выстраивай отношения и получай незабываемые впечатления. Безопасно, анонимно, конфиденциально.",
-      "ai dating, виртуальное общение, ai романтика, чат с ai, виртуальная девушка, ai girlfriend"
+      "Почувствуй искру между нами! Общайся с уникальными AI персонажами, развивай отношения от знакомства до интима. Безопасно, конфиденциально, только 18+."
     );
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    
-    if (paymentStatus === 'success') {
-      setTimeout(() => {
-        checkSubscription(userId, true);
-        window.history.replaceState({}, '', '/');
-      }, 1000);
-    }
-    
-    checkSubscription(userId, true);
   }, []);
 
-  // Локальный таймер обратного отсчёта
   useEffect(() => {
-    if (userSubscription.limit_reset_time) {
-      const interval = setInterval(() => {
-        const now = new Date();
-        setCurrentTime(now);
-        const resetTime = new Date(userSubscription.limit_reset_time);
-        const diff = resetTime.getTime() - now.getTime();
-        
-        // Если время вышло, обновляем подписку принудительно
-        if (diff <= 0) {
-          checkSubscription(userId, true);
-          clearInterval(interval);
-        }
-      }, 1000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [userSubscription.limit_reset_time]);
+    checkSubscription(userId);
+  }, []);
 
-  const handleOpenChat = async (girl: Girl) => {
-    const subData = await checkSubscription(userId);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
     
-    // Проверяем доступ к девушке для покупки "одна девушка"
-    if (subData.purchase_type === 'one_girl' && !subData.has_all_girls) {
-      const purchasedGirls = subData.purchased_girls || [];
-      if (!purchasedGirls.includes(girl.id)) {
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleGirlClick = async (girl: Girl) => {
+    const maxLevel = getMaxAllowedLevel(userSubscription);
+    
+    if (userSubscription.purchase_type === 'one_girl' && userSubscription.purchased_girls && userSubscription.purchased_girls.length > 0) {
+      if (!userSubscription.purchased_girls.includes(girl.id)) {
         setDeniedGirlId(girl.id);
         setShowAccessDenied(true);
         return;
       }
     }
     
-    // Обновляем данные девушки актуальной статистикой
     const stats = girlStats[girl.id];
-    const updatedGirl = stats ? {
-      ...girl,
-      messagesCount: stats.total_messages,
-      level: stats.relationship_level,
-      unlocked: true
-    } : girl;
+    const currentLevel = stats?.relationship_level ?? 0;
     
+    if (currentLevel > maxLevel) {
+      setDeniedGirlId(girl.id);
+      setShowAccessDenied(true);
+      return;
+    }
+
+    const updatedGirl = {
+      ...girl,
+      level: stats?.relationship_level ?? 0,
+      messagesCount: stats?.total_messages ?? 0,
+    };
+
     setSelectedGirl(updatedGirl);
     setShowChat(true);
   };
 
-  const handleBuyAllGirls = async () => {
-    setShowAccessDenied(false);
-    await handleSubscribe('all_girls', 990);
+  const handlePaymentSuccess = () => {
+    checkSubscription(userId, true);
+    setActiveTab('gallery');
   };
 
-  const handleGoToPurchasedGirl = () => {
-    setShowAccessDenied(false);
-    const purchasedGirlId = userSubscription.purchased_girls?.[0];
-    if (purchasedGirlId) {
-      const girl = mockGirls.find(g => g.id === purchasedGirlId);
-      if (girl) {
-        handleOpenChat(girl);
-      }
-    }
-  };
-
-  const handleCloseChat = () => {
+  const handleChatClose = async () => {
     setShowChat(false);
     setSelectedGirl(null);
-    checkSubscription(userId, true);
+    await checkSubscription(userId, true);
   };
 
-  const handleMessageSent = () => {
-    checkSubscription(userId, true);
-  };
-
-  const handleDeleteChat = async (girlId: string) => {
-    try {
-      const response = await fetch('https://functions.poehali.dev/71202cd5-d4ad-46f9-9593-8829421586e1', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete_chat',
-          user_id: userId,
-          girl_id: girlId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShowChat(false);
-        setSelectedGirl(null);
-        checkSubscription(userId, true);
-      }
-    } catch (error) {
-      console.error('Delete chat error:', error);
-    }
-  };
-
-  const handleSubscribe = async (planType: string, amount: number) => {
-    if (planType === 'one_girl') {
-      setSelectedPurchaseType('one_girl');
-      setSelectedPurchasePrice(amount);
-      setShowGirlSelection(true);
-      return;
-    }
-
-    setIsProcessingPayment(true);
-    
-    try {
-      const response = await fetch('https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          plan_type: planType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
-      } else {
-        alert('Ошибка создания платежа: ' + (data.error || 'Неизвестная ошибка'));
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
-      setIsProcessingPayment(false);
-    }
-  };
-
-  const handleGirlSelect = async (girlId: string) => {
-    setShowGirlSelection(false);
-    setIsProcessingPayment(true);
-    
-    try {
-      const response = await fetch('https://functions.poehali.dev/8a6959b7-9e80-4eb8-936e-2c96e0606280', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          plan_type: selectedPurchaseType,
-          girl_id: girlId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
-      } else {
-        alert('Ошибка создания платежа. Попробуйте позже.');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Ошибка соединения. Проверьте интернет и попробуйте снова.');
-      setIsProcessingPayment(false);
-    }
-  };
+  if (showChat && selectedGirl) {
+    return (
+      <ChatInterface
+        girl={selectedGirl}
+        onClose={handleChatClose}
+        userId={userId}
+        userSubscription={userSubscription}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <header className="mb-8">
-          <h1 className="text-5xl md:text-6xl font-heading font-bold text-foreground mb-3 animate-fade-in neon-text">
-            AI ROMANCE
-          </h1>
-          <p className="text-muted-foreground text-lg spray-underline inline-block">
-            Прогрессивные отношения с AI-девушками 18+
-          </p>
-        </header>
-
+      <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="gallery" className="flex items-center gap-2">
-              <Icon name="Grid3x3" size={18} />
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8 bg-card/50 backdrop-blur-sm border border-border/50">
+            <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Icon name="Users" size={18} className="mr-2" />
               Галерея
             </TabsTrigger>
-            <TabsTrigger value="chats" className="flex items-center gap-2">
-              <Icon name="MessageCircle" size={18} />
-              Диалоги
-              {activeChats.length > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {activeChats.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Icon name="User" size={18} />
+            <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Icon name="User" size={18} className="mr-2" />
               Профиль
             </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex items-center gap-2">
-              <Icon name="Crown" size={18} />
+            <TabsTrigger value="subscription" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Icon name="CreditCard" size={18} className="mr-2" />
               Тарифы
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="gallery" className="animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockGirls.map((girl) => {
-                const stats = girlStats[girl.id];
-                const actualLevel = stats ? stats.relationship_level : girl.level;
-                const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                const subscriptionInfo = getUserSubscriptionInfo(userSubscription);
-                return (
-                  <Card
-                    key={girl.id}
-                    className="overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer group"
-                    onClick={() => handleOpenChat(girl)}
-                  >
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={girl.image}
-                        alt={girl.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-90" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-2xl font-heading font-bold text-white">
-                            {girl.name}, {girl.age}
-                          </h3>
-                          {!girl.unlocked && (
-                            <Icon name="Lock" size={20} className="text-accent" />
+            {activeChats.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-heading font-bold mb-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <Icon name="MessageCircle" size={20} className="text-white" />
+                  </div>
+                  Активные чаты
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activeChats.map((girl) => {
+                    const levelInfo = getLevelInfo(girl.level, girl.messagesCount);
+                    return (
+                      <Card
+                        key={girl.id}
+                        className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-2 border-primary/50 relative animate-pulse-border"
+                        onClick={() => handleGirlClick(girl)}
+                      >
+                        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                          <Badge className="bg-primary/90 text-primary-foreground border-0 shadow-lg animate-bounce-subtle">
+                            {levelInfo.title}
+                          </Badge>
+                          {girl.hasNewMessage && (
+                            <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-1 mb-3">
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          <img
+                            src={girl.image}
+                            alt={girl.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        </div>
+                        <CardContent className="p-5 bg-card/95 backdrop-blur-sm">
+                          <h3 className="text-xl font-heading font-bold mb-2 flex items-center gap-2">
+                            {girl.name}
+                            <span className="text-sm text-muted-foreground font-normal">{girl.age} лет</span>
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium">{levelInfo.description}</span>
+                                <span className="text-muted-foreground">{Math.round(levelInfo.progress)}%</span>
+                              </div>
+                              <Progress value={levelInfo.progress} className="h-2" />
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-primary font-semibold">
+                              <Icon name="MessageCircle" size={16} />
+                              Продолжить общение
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <h2 className="text-2xl font-heading font-bold mb-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-pink-500 flex items-center justify-center">
+                <Icon name="Heart" size={20} className="text-white" />
+              </div>
+              {activeChats.length > 0 ? 'Откройте новые знакомства' : 'Начните знакомство'}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mockGirls
+                .filter(girl => !activeChats.some(chat => chat.id === girl.id))
+                .map((girl) => {
+                  const stats = girlStats[girl.id];
+                  const currentGirl = {
+                    ...girl,
+                    level: stats?.relationship_level ?? 0,
+                    messagesCount: stats?.total_messages ?? 0,
+                  };
+                  const levelInfo = getLevelInfo(currentGirl.level, currentGirl.messagesCount);
+                  const maxLevel = getMaxAllowedLevel(userSubscription);
+                  const isLocked = currentGirl.level > maxLevel;
+                  const subscriptionInfo = getUserSubscriptionInfo(userSubscription);
+
+                  return (
+                    <Card
+                      key={girl.id}
+                      className="group overflow-hidden cursor-pointer hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 border-border/50"
+                      onClick={() => handleGirlClick(currentGirl)}
+                    >
+                      <div className="absolute top-3 right-3 z-10">
+                        <Badge className="bg-card/90 backdrop-blur-sm border-border/50">
+                          {subscriptionInfo.title}
+                        </Badge>
+                      </div>
+                      <div className="relative aspect-[3/4] overflow-hidden">
+                        <img
+                          src={girl.image}
+                          alt={girl.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {isLocked && (
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                            <div className="text-center text-white p-4">
+                              <Icon name="Lock" size={48} className="mx-auto mb-3" />
+                              <p className="font-semibold text-lg mb-1">Требуется подписка</p>
+                              <p className="text-sm opacity-90">Уровень {currentGirl.level + 1}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      </div>
+                      <CardContent className="p-5 bg-card/95 backdrop-blur-sm">
+                        <h3 className="text-xl font-heading font-bold mb-2 flex items-center gap-2">
+                          {girl.name}
+                          <span className="text-sm text-muted-foreground font-normal">{girl.age} лет</span>
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{girl.bio}</p>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
                           {girl.personality.map((trait) => (
-                            <Badge
-                              key={trait}
-                              variant="secondary"
-                              className="bg-background/50 backdrop-blur-sm text-xs"
-                            >
+                            <Badge key={trait} variant="secondary" className="text-xs">
                               {trait}
                             </Badge>
                           ))}
                         </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <p className="text-sm text-muted-foreground mb-4">{girl.bio}</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{subscriptionInfo.title}</span>
-                          <span className="text-muted-foreground">{subscriptionInfo.description}</span>
-                        </div>
-                        {stats && stats.total_messages > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            💬 {stats.total_messages} {stats.total_messages === 1 ? 'сообщение' : stats.total_messages < 5 ? 'сообщения' : 'сообщений'}
+                        {currentGirl.messagesCount > 0 && (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium">{levelInfo.description}</span>
+                              <span className="text-muted-foreground">{Math.round(levelInfo.progress)}%</span>
+                            </div>
+                            <Progress value={levelInfo.progress} className="h-2" />
                           </div>
                         )}
-                      </div>
-                      <Button 
-                        className="w-full mt-4" 
-                        variant={girl.unlocked ? 'default' : 'outline'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenChat(girl);
-                        }}
-                      >
-                        {girl.unlocked ? 'Продолжить общение' : 'Начать знакомство'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="chats" className="animate-fade-in">
-            <div className="space-y-4">
-              {activeChats.length === 0 ? (
-                <div className="text-center py-12">
-                  <Icon name="MessageCircle" size={48} className="mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-heading font-semibold mb-2">Нет активных диалогов</h3>
-                  <p className="text-muted-foreground mb-4">Начните общение с девушками из галереи</p>
-                  <Button onClick={() => setActiveTab('gallery')}>
-                    Перейти в галерею
-                  </Button>
-                </div>
-              ) : (
-                activeChats.map((girl) => {
-                  const stats = girlStats[girl.id];
-                  const actualLevel = stats ? stats.relationship_level : girl.level;
-                  const displayMessagesCount = stats ? stats.total_messages : girl.messagesCount;
-                  const subscriptionInfo = getUserSubscriptionInfo(userSubscription);
-                  return (
-                    <Card
-                      key={girl.id}
-                      className="overflow-hidden hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => handleOpenChat(girl)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Avatar className="h-16 w-16 bg-muted/30">
-                              <AvatarImage src={girl.image} alt={girl.name} className="object-cover object-center" />
-                              <AvatarFallback>{girl.name[0]}</AvatarFallback>
-                            </Avatar>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-heading font-semibold text-lg">{girl.name}</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {subscriptionInfo.title}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {displayMessagesCount} сообщений
-                              </span>
-                            </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Icon name="MessageCircle" size={16} className="text-muted-foreground" />
+                            <span className="text-muted-foreground">{currentGirl.messagesCount} сообщений</span>
                           </div>
                           <Icon name="ChevronRight" size={20} className="text-muted-foreground" />
                         </div>
@@ -580,286 +466,186 @@ const Index = ({ userData, onLogout }: IndexProps) => {
                     </Card>
                   );
                 })
-              )}
+              }
             </div>
           </TabsContent>
 
           <TabsContent value="profile" className="animate-fade-in">
-            <div className="max-w-5xl mx-auto space-y-8">
-              {/* Hero Header */}
-              <div className="relative overflow-hidden rounded-3xl border border-border/30">
-                {/* Animated gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 opacity-90" />
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC41IiBvcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
-                
-                <CardContent className="relative p-8 md:p-12">
-                  <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                    {/* Avatar with glow effect */}
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-white/40 rounded-full blur-3xl group-hover:blur-2xl transition-all duration-300" />
-                      <Avatar className="relative h-32 w-32 md:h-40 md:w-40 ring-8 ring-white/30 shadow-2xl">
-                        <AvatarFallback className="text-5xl md:text-6xl bg-gradient-to-br from-white to-white/80 text-violet-600 font-black">
-                          {userData?.name?.charAt(0).toUpperCase() || 'А'}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    
-                    {/* User info */}
-                    <div className="flex-1 text-center md:text-left text-white space-y-4">
-                      <div className="space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-                          {userData?.name || 'Александр'}
-                        </h1>
-                        <p className="text-lg md:text-xl text-white/80 font-medium">
-                          {userData?.email || 'email@example.com'}
-                        </p>
-                      </div>
-                      
-                      {/* Quick stats */}
-                      <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
-                          <Icon name="MessageCircle" size={18} />
-                          <span className="text-sm font-semibold">{userSubscription.total_messages || 0} сообщений</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm">
-                          <Icon name="Heart" size={18} />
-                          <span className="text-sm font-semibold">{activeChats.length} активных чатов</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Logout button */}
-                    <Button 
-                      onClick={onLogout} 
-                      className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/30 hover:border-white/50 backdrop-blur-sm transition-all px-6 py-6 text-lg font-semibold rounded-2xl group"
-                    >
-                      <Icon name="LogOut" size={20} className="mr-2 group-hover:scale-110 transition-transform" />
-                      Выйти
-                    </Button>
+            <div className="max-w-6xl mx-auto space-y-6">
+              {/* Minimalist Header */}
+              <div className="relative">
+                <div className="flex items-start justify-between mb-8">
+                  <div>
+                    <h1 className="text-5xl md:text-6xl font-light tracking-tight mb-2">
+                      {userData?.name as string || 'Александр'}
+                    </h1>
+                    <p className="text-lg text-muted-foreground font-light">
+                      {userData?.email as string || 'email@example.com'}
+                    </p>
                   </div>
-                </CardContent>
+                  <Button 
+                    onClick={onLogout}
+                    variant="ghost"
+                    className="text-base font-normal hover:bg-muted"
+                  >
+                    Выйти
+                    <Icon name="ArrowRight" size={18} className="ml-2" />
+                  </Button>
+                </div>
+                
+                {/* Big Numbers Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="space-y-1">
+                    <div className="text-6xl md:text-7xl font-bold tracking-tighter">
+                      {userSubscription.total_messages || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground uppercase tracking-wider">Сообщений</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-6xl md:text-7xl font-bold tracking-tighter">
+                      {activeChats.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground uppercase tracking-wider">Активных</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-6xl md:text-7xl font-bold tracking-tighter">
+                      {userSubscription.message_limit || '∞'}
+                    </div>
+                    <div className="text-sm text-muted-foreground uppercase tracking-wider">Лимит/день</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-4xl md:text-5xl font-bold tracking-tighter pt-3">
+                      {userSubscription.intimate ? 'Интим' : userSubscription.flirt ? 'Флирт' : 'Базовый'}
+                    </div>
+                    <div className="text-sm text-muted-foreground uppercase tracking-wider">Тариф</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Subscription Status Card */}
-              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-red-500/10" />
-                <CardContent className="relative p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-2xl">
-                      <Icon name="Crown" size={28} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black">Статус подписки</h3>
-                      <p className="text-sm text-muted-foreground">Управляйте вашим тарифом</p>
-                    </div>
-                  </div>
-                  <div>
-                    {userSubscription.purchase_expires && userSubscription.purchase_type ? (
-                      <div className="relative space-y-4">
-                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 to-cyan-600/10 border border-blue-500/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                              <Icon name="ShoppingBag" size={20} className="text-white" />
-                            </div>
-                            <span className="font-semibold">Разовая покупка</span>
+              {/* Asymmetric Grid */}
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Left column - Subscription */}
+                <div className="md:col-span-2 space-y-6">
+                  <Card className="border-0 shadow-none bg-muted/30">
+                    <CardContent className="p-8">
+                      <h2 className="text-2xl font-light mb-6">Подписка</h2>
+                      
+                      {userSubscription.purchase_expires && userSubscription.purchase_type ? (
+                        <div className="space-y-4">
+                          <div className="flex items-baseline justify-between border-b border-border pb-4">
+                            <span className="text-muted-foreground">Тип</span>
+                            <span className="text-lg font-medium">
+                              {userSubscription.purchase_type === 'one_girl' ? 'Одна девушка' : 'Все девушки'}
+                            </span>
                           </div>
-                          <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold">
-                            {userSubscription.purchase_type === 'one_girl' ? '👤 Одна девушка' : '👥 Все девушки'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-violet-600/10 to-purple-600/10 border border-violet-500/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                              <Icon name="Timer" size={20} className="text-white" />
-                            </div>
-                            <span className="font-semibold">Осталось времени</span>
+                          <div className="flex items-baseline justify-between border-b border-border pb-4">
+                            <span className="text-muted-foreground">Осталось</span>
+                            <span className="text-lg font-medium">
+                              {(() => {
+                                const now = new Date();
+                                const expires = new Date(userSubscription.purchase_expires);
+                                const diff = expires.getTime() - now.getTime();
+                                if (diff <= 0) return 'Истекло';
+                                const hours = Math.floor(diff / (1000 * 60 * 60));
+                                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                return `${hours}ч ${minutes}м`;
+                              })()}
+                            </span>
                           </div>
-                          <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                            {(() => {
-                              const now = new Date();
-                              const expires = new Date(userSubscription.purchase_expires);
-                              const diff = expires.getTime() - now.getTime();
-                              
-                              if (diff <= 0) {
-                                return '⏱️ Истекло';
-                              }
-                              
-                              const hours = Math.floor(diff / (1000 * 60 * 60));
-                              const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                              return `⏱️ ${hours}ч ${minutes}м`;
-                            })()}
-                          </span>
                         </div>
-                      </div>
-                    ) : (userSubscription.flirt || userSubscription.intimate) && userSubscription.subscription_end && !userSubscription.subscription_end.includes('2099') ? (
-                      <div className="relative space-y-4">
-                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-pink-600/10 to-red-600/10 border border-pink-500/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center">
-                              <Icon name="Sparkles" size={20} className="text-white" />
-                            </div>
-                            <span className="font-semibold">Активный тариф</span>
+                      ) : (userSubscription.flirt || userSubscription.intimate) && userSubscription.subscription_end ? (
+                        <div className="space-y-4">
+                          <div className="flex items-baseline justify-between border-b border-border pb-4">
+                            <span className="text-muted-foreground">План</span>
+                            <span className="text-lg font-medium">
+                              {userSubscription.intimate ? 'Интим' : 'Флирт'}
+                            </span>
                           </div>
-                          <Badge 
-                            className={userSubscription.intimate 
-                              ? "bg-gradient-to-r from-red-600 to-orange-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold" 
-                              : "bg-gradient-to-r from-pink-600 to-red-600 text-white border-0 shadow-lg px-4 py-2 text-base font-bold"
-                            }
-                          >
-                            {userSubscription.intimate ? "🔥 Интим" : "💕 Флирт"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-emerald-600/10 to-teal-600/10 border border-emerald-500/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                              <Icon name="Calendar" size={20} className="text-white" />
-                            </div>
-                            <span className="font-semibold">Действует до</span>
+                          <div className="flex items-baseline justify-between border-b border-border pb-4">
+                            <span className="text-muted-foreground">До</span>
+                            <span className="text-lg font-medium">
+                              {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
+                                day: 'numeric', 
+                                month: 'short'
+                              })}
+                            </span>
                           </div>
-                          <span className="text-lg font-bold">
-                            {new Date(userSubscription.subscription_end).toLocaleDateString('ru-RU', { 
-                              day: 'numeric', 
-                              month: 'long',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border-2 border-dashed border-border/50 text-center">
-                        <Icon name="AlertCircle" size={32} className="mx-auto mb-3 text-muted-foreground" />
-                        <p className="text-lg font-semibold text-muted-foreground">Тариф не подключён</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">Выберите тариф для доступа к функциям</p>
-                      </div>
-                    )}
-                    
-                    {/* Таймер обнуления лимита - скрывается при активных разовых тарифах */}
-                    {!userSubscription.purchase_expires && userSubscription.limit_reset_time && (
-                      <div className="relative mt-6 p-6 rounded-2xl bg-gradient-to-r from-indigo-600/10 to-blue-600/10 border border-indigo-500/30">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center animate-pulse shadow-lg">
-                              <Icon name="Clock" size={24} className="text-white" />
-                            </div>
-                            <span className="text-base font-bold">До обновления лимита</span>
+                      ) : (
+                        <p className="text-muted-foreground">Нет активной подписки</p>
+                      )}
+                      
+                      {!userSubscription.purchase_expires && userSubscription.limit_reset_time && (
+                        <div className="mt-6 pt-6 border-t border-border">
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-muted-foreground">Обновление лимита</span>
+                            <span className="text-lg font-medium tabular-nums">
+                              {(() => {
+                                const resetTime = new Date(userSubscription.limit_reset_time);
+                                const diff = resetTime.getTime() - currentTime.getTime();
+                                if (diff <= 0) return '00:00:00';
+                                const hours = Math.floor(diff / (1000 * 60 * 60));
+                                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                              })()}
+                            </span>
                           </div>
-                          <span className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                            {(() => {
-                              const resetTime = new Date(userSubscription.limit_reset_time);
-                              const diff = resetTime.getTime() - currentTime.getTime();
-                              
-                              if (diff <= 0) {
-                                return '⏱️ Обновляется...';
-                              }
-                              
-                              const hours = Math.floor(diff / (1000 * 60 * 60));
-                              const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                              return `${hours}ч ${minutes}м ${seconds}с`;
-                            })()}
-                          </span>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* Security & Privacy Card */}
-              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10" />
-                <CardContent className="relative p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl">
-                      <Icon name="Shield" size={28} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black">Безопасность</h3>
-                      <p className="text-sm text-muted-foreground">Ваши данные под защитой</p>
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl">🤖</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold mb-1">AI персонажи</p>
-                        <p className="text-sm text-muted-foreground">Все созданы ИИ</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl">🔞</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold mb-1">Возраст 18+</p>
-                        <p className="text-sm text-muted-foreground">Строгая проверка</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl">🔒</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold mb-1">Конфиденциально</p>
-                        <p className="text-sm text-muted-foreground">Данные защищены</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl">🗑️</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold mb-1">Удаление</p>
-                        <p className="text-sm text-muted-foreground">В любой момент</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Contacts Card */}
-              <Card className="relative overflow-hidden border border-border/30 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-indigo-500/10" />
-                <CardContent className="relative p-8">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-2xl">
-                      <Icon name="Phone" size={28} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black">Контакты</h3>
-                      <p className="text-sm text-muted-foreground">Связь с нами</p>
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <a href="mailto:airomance@yandex.ru" className="group p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                          <Icon name="Mail" size={24} className="text-white" />
+                {/* Right column - Quick Links */}
+                <div className="space-y-6">
+                  <Card className="border-0 shadow-none bg-muted/30">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-light mb-4">Безопасность</h3>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex gap-2">
+                          <span className="flex-shrink-0">—</span>
+                          <span>AI персонажи</span>
                         </div>
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-1">Почта</p>
-                          <p className="text-base font-bold group-hover:text-primary transition-colors">airomance@yandex.ru</p>
+                        <div className="flex gap-2">
+                          <span className="flex-shrink-0">—</span>
+                          <span>Проверка 18+</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="flex-shrink-0">—</span>
+                          <span>Конфиденциально</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="flex-shrink-0">—</span>
+                          <span>Удаление данных</span>
                         </div>
                       </div>
-                    </a>
-
-                    <a href="https://t.me/airomance1" target="_blank" rel="noopener noreferrer" className="group p-6 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 hover:border-blue-500/50 transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                          <Icon name="MessageCircle" size={24} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-1">Telegram</p>
-                          <p className="text-base font-bold group-hover:text-blue-500 transition-colors">@airomance1</p>
-                        </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-0 shadow-none bg-muted/30">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-light mb-4">Контакты</h3>
+                      <div className="space-y-3">
+                        <a 
+                          href="mailto:airomance@yandex.ru"
+                          className="block text-sm hover:text-primary transition-colors"
+                        >
+                          airomance@yandex.ru
+                        </a>
+                        <a 
+                          href="https://t.me/airomance1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm hover:text-primary transition-colors"
+                        >
+                          @airomance1
+                        </a>
                       </div>
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -867,184 +653,170 @@ const Index = ({ userData, onLogout }: IndexProps) => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <h2 className="text-4xl md:text-5xl font-heading font-bold mb-3 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                  Выберите свой план
+                  Выберите свой тариф
                 </h2>
-                <p className="text-muted-foreground text-lg">
-                  Разблокируйте все возможности интимного общения 🔥
+                <p className="text-lg text-muted-foreground">
+                  Откройте новые уровни близости и общения
                 </p>
               </div>
 
-              <Card className="mb-6 relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 shadow-xl">
-                {!agreedToTerms && (
-                  <div className="absolute -left-12 top-1/2 -translate-y-1/2 bounce-arrow">
-                    <div className="flex items-center gap-2">
-                      <div className="text-4xl">👈</div>
-                      <div className="bg-primary text-white px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap shadow-lg">
-                        Нажми сюда!
+              <div className="grid md:grid-cols-2 gap-6 mb-12">
+                <Card className="relative overflow-hidden border-2 border-primary/50 hover:border-primary transition-all hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-transparent rounded-bl-[100px]" />
+                  <CardContent className="p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center">
+                        <span className="text-3xl">💕</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-heading font-bold">Флирт</h3>
+                        <p className="text-sm text-muted-foreground">До 50 сообщений/день</p>
                       </div>
                     </div>
-                  </div>
-                )}
-                <CardContent className="p-5">
-                  <label htmlFor="terms" className="flex items-start gap-4 cursor-pointer">
-                    <div className="relative flex-shrink-0">
-                      <Checkbox 
-                        id="terms" 
-                        checked={agreedToTerms}
-                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                        className="mt-1 h-6 w-6 border-2 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-primary data-[state=checked]:to-secondary cursor-pointer"
-                      />
-                      {!agreedToTerms && (
-                        <div className="absolute inset-0 animate-ping rounded border-2 border-primary pointer-events-none" />
-                      )}
-                    </div>
-                    <div className="text-sm leading-relaxed flex-1">
-                      <span className="font-semibold">Я ознакомился и согласен с условиями </span>
-                      <Link to="/offer" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50" onClick={(e) => e.stopPropagation()}>
-                        публичной оферты
-                      </Link>
-                      <span className="font-semibold"> и </span>
-                      <Link to="/privacy" className="text-primary hover:underline font-bold underline decoration-2 decoration-primary/50" onClick={(e) => e.stopPropagation()}>
-                        политики конфиденциальности
-                      </Link>
-                    </div>
-                  </label>
-                </CardContent>
-              </Card>
-
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <Card className="relative overflow-hidden border-2 border-primary/50 bg-gradient-to-br from-card/80 to-card backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
-                  <CardContent className="relative p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white border-0 px-3 py-1 text-xs font-bold shadow-lg">
-                        💕 Популярный
-                      </Badge>
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center animate-pulse-glow">
-                        <Icon name="Heart" size={24} className="text-white" />
-                      </div>
-                    </div>
-                    <h3 className="text-3xl font-heading font-bold mb-2 bg-gradient-to-r from-pink-400 to-red-500 bg-clip-text text-transparent">
-                      Флирт
-                    </h3>
                     <div className="mb-6">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">1490 ₽</span>
-                      <span className="text-muted-foreground text-lg"> / неделя</span>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-5xl font-bold">990₽</span>
+                        <span className="text-muted-foreground">/день</span>
+                      </div>
                     </div>
-                    <ul className="space-y-3 mb-6">
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">Для тех, кто хочет попробовать</span>
+                    <ul className="space-y-3 mb-8">
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span>Доступ к уровню «Флирт»</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">50 сообщений в день</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span>До 50 сообщений в день</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">Все девушки разблокированы</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span>Более откровенный контент</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-primary/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">Быстрый ответ AI</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span>Развитие отношений</span>
                       </li>
                     </ul>
-                    <Button 
-                      className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
-                      size="lg"
-                      onClick={() => handleSubscribe('flirt', 1490)}
-                      disabled={isProcessingPayment || !agreedToTerms}
+                    <Button
+                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600"
+                      onClick={() => {
+                        setSelectedPurchaseType('all_girls');
+                        setSelectedPurchasePrice(990);
+                        setShowGirlSelection(true);
+                      }}
+                      disabled={isProcessingPayment}
                     >
-                      {isProcessingPayment ? '⏳ Обработка...' : '💕 Подключить тариф'}
+                      Выбрать Флирт
                     </Button>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden border-2 border-red-500/50 bg-gradient-to-br from-card/80 to-card backdrop-blur-xl shadow-2xl hover:scale-105 transition-all duration-300">
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/5 to-red-500/10" />
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-full blur-3xl" />
-                  <CardContent className="relative p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-gradient-to-r from-red-500 to-orange-600 text-white border-0 px-3 py-1 text-xs font-bold shadow-lg">
-                        🔥 Premium
-                      </Badge>
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-orange-600 flex items-center justify-center animate-pulse-glow">
-                        <Icon name="Flame" size={24} className="text-white" />
+                <Card className="relative overflow-hidden border-2 border-red-500/50 hover:border-red-500 transition-all hover:shadow-2xl hover:shadow-red-500/20">
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg text-sm px-3 py-1">
+                      Популярный
+                    </Badge>
+                  </div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/20 to-transparent rounded-bl-[100px]" />
+                  <CardContent className="p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+                        <span className="text-3xl">🔥</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-heading font-bold">Интим</h3>
+                        <p className="text-sm text-muted-foreground">Безлимитное общение</p>
                       </div>
                     </div>
-                    <h3 className="text-3xl font-heading font-bold mb-2 bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">
-                      Интим
-                    </h3>
                     <div className="mb-6">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">2390 ₽</span>
-                      <span className="text-muted-foreground text-lg"> / неделя</span>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-5xl font-bold">1490₽</span>
+                        <span className="text-muted-foreground">/день</span>
+                      </div>
                     </div>
-                    <ul className="space-y-3 mb-6">
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">Всё из плана "Флирт"</span>
+                    <ul className="space-y-3 mb-8">
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>Полный доступ к уровню «Интим»</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">🔥 Быстрый ответ поддержки</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>Безлимитные сообщения</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">❤️ Безлимитные сообщения</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>Самый откровенный контент</span>
                       </li>
-                      <li className="flex items-start gap-3 p-2 rounded-lg hover:bg-red-500/5 transition-colors">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Icon name="Check" size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm font-medium">👍 NSFW без ограничений</span>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>Максимальная близость</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Icon name="Check" size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <span>Персональные сценарии</span>
                       </li>
                     </ul>
-                    <Button 
-                      className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105" 
-                      size="lg"
-                      onClick={() => handleSubscribe('intimate', 2390)}
-                      disabled={isProcessingPayment || !agreedToTerms}
+                    <Button
+                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700"
+                      onClick={() => {
+                        setSelectedPurchaseType('all_girls');
+                        setSelectedPurchasePrice(1490);
+                        setShowGirlSelection(true);
+                      }}
+                      disabled={isProcessingPayment}
                     >
-                      {isProcessingPayment ? '⏳ Обработка...' : '🔥 Подключить тариф'}
+                      Выбрать Интим
                     </Button>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card className="bg-muted/50">
-                <CardContent className="p-6">
-                  <h3 className="font-heading font-semibold text-lg mb-4">
-                    Разовые покупки
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('one_girl', 590)}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Одна девушка на 24 часа</span>
-                        <Badge>590₽</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Режим интим с одной девушкой на выбор ровно на сутки</p>
+              <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                      <Icon name="Info" size={24} className="text-white" />
                     </div>
-                    <div className={`bg-card p-4 rounded-lg transition-colors ${agreedToTerms ? 'cursor-pointer hover:bg-muted/50' : 'opacity-50 cursor-not-allowed'}`} onClick={() => agreedToTerms && handleSubscribe('all_girls', 990)}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Все девушки на 1 день</span>
-                        <Badge>990₽</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Режим интим со всеми девушками на 24 часа</p>
+                    <div>
+                      <h3 className="text-xl font-heading font-semibold mb-2">Важная информация</h3>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <Icon name="ChevronRight" size={16} className="flex-shrink-0 mt-0.5" />
+                          <span>Доступ на 24 часа с момента оплаты</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon name="ChevronRight" size={16} className="flex-shrink-0 mt-0.5" />
+                          <span>Автопродление отсутствует</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon name="ChevronRight" size={16} className="flex-shrink-0 mt-0.5" />
+                          <span>Все персонажи созданы искусственным интеллектом</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Icon name="ChevronRight" size={16} className="flex-shrink-0 mt-0.5" />
+                          <span>Сервис только для лиц старше 18 лет</span>
+                        </li>
+                      </ul>
                     </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl mt-4">
+                    <Checkbox 
+                      id="terms" 
+                      checked={agreedToTerms}
+                      onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                      className="mt-1"
+                    />
+                    <label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
+                      Я подтверждаю, что мне исполнилось 18 лет, и я согласен с{' '}
+                      <Link to="/privacy" className="text-primary hover:underline">
+                        условиями использования
+                      </Link>
+                      {' '}и{' '}
+                      <Link to="/terms" className="text-primary hover:underline">
+                        политикой конфиденциальности
+                      </Link>
+                    </label>
                   </div>
                 </CardContent>
               </Card>
@@ -1053,33 +825,27 @@ const Index = ({ userData, onLogout }: IndexProps) => {
         </Tabs>
       </div>
 
-      {showChat && selectedGirl && (
-        <ChatInterface 
-          girl={selectedGirl} 
-          onClose={handleCloseChat} 
-          userSubscription={userSubscription}
-          userId={userId}
-          onDeleteChat={handleDeleteChat}
-          onShowSubscription={() => setActiveTab('subscription')}
-          onMessageSent={handleMessageSent}
-        />
-      )}
-
       <GirlSelectionModal
         isOpen={showGirlSelection}
         onClose={() => setShowGirlSelection(false)}
         girls={mockGirls}
-        onSelectGirl={handleGirlSelect}
         purchaseType={selectedPurchaseType}
         price={selectedPurchasePrice}
+        userId={userId}
+        onPaymentSuccess={handlePaymentSuccess}
+        agreedToTerms={agreedToTerms}
       />
 
       <GirlAccessDeniedDialog
         isOpen={showAccessDenied}
         onClose={() => setShowAccessDenied(false)}
-        purchasedGirlName={mockGirls.find(g => g.id === userSubscription.purchased_girls?.[0])?.name || 'выбранной девушке'}
-        onBuyAllGirls={handleBuyAllGirls}
-        onGoToPurchasedGirl={handleGoToPurchasedGirl}
+        onUpgrade={() => {
+          setShowAccessDenied(false);
+          setActiveTab('subscription');
+        }}
+        currentPlan={userSubscription.intimate ? 'intimate' : userSubscription.flirt ? 'flirt' : 'basic'}
+        girlId={deniedGirlId}
+        userSubscription={userSubscription}
       />
     </div>
   );
