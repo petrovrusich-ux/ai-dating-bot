@@ -574,7 +574,7 @@ const ChatInterface = ({ girl, onClose, userSubscription = { flirt: false, intim
                 >
                   {message.sender === 'ai' && message.text !== 'typing' && (
                     <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src={girl.image} alt={girl.name} />
+                      <AvatarImage src={girl.image} alt={girl.name} className="object-cover object-center" />
                       <AvatarFallback>{girl.name[0]}</AvatarFallback>
                     </Avatar>
                   )}
