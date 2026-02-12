@@ -7,7 +7,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     Создание платежа через Platega.io v2.0
     Принимает: user_id, plan_type (flirt/intimate/one_girl/all_girls)
-    Цены: Флирт 1490₽, Интим 1990₽, 1 девушка 590₽, Все девушки 990₽
+    Цены: Флирт 1490₽, Интим 2390₽, 1 девушка 590₽, Все девушки 990₽
     Возвращает: payment_url для редиректа пользователя
     '''
     method: str = event.get('httpMethod', 'POST')
@@ -52,7 +52,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Определяем сумму в зависимости от плана (актуальные цены)
         prices = {
             'flirt': 1490,
-            'intimate': 1990,
+            'intimate': 2390,
             'one_girl': 590,
             'all_girls': 990,
             'all_girls_day': 990,
