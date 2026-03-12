@@ -546,8 +546,8 @@ CRITICAL: REMEMBER CONTEXT BETWEEN MESSAGES!
     
     messages = [{"role": "system", "content": system_message}]
     
-    # Add conversation history (limit to last 15 messages to avoid token limits)
-    for msg in conversation_history[-15:]:
+    # Add conversation history (limit to last 8 messages to avoid token limits)
+    for msg in conversation_history[-8:]:
         role = "assistant" if msg.get('sender') == 'girl' else "user"
         messages.append({"role": role, "content": msg.get('text', '')})
     
