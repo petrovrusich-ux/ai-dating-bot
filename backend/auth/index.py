@@ -299,7 +299,7 @@ def handle_validate(event: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         return error_response(500, f'Validation failed: {str(e)}')
 
-def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
+def handle_check_subscription(params: Dict[str, str], conn=None) -> Dict[str, Any]:
     user_id = params.get('user_id')
     if not user_id:
         return error_response(400, 'Missing user_id parameter')
@@ -315,22 +315,26 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
         'intimate': False
     }
     
+    close_conn = conn is None
     try:
-        conn = get_db_connection()
+        if conn is None:
+            conn = get_db_connection()
         cur = conn.cursor()
         
+        # Combined subscription query (was 2 separate queries)
         cur.execute(
-            "SELECT flirt, intimate, end_date FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s",
+            "SELECT flirt, intimate, end_date, subscription_type, is_active FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s ORDER BY end_date DESC LIMIT 1",
             (user_id,)
         )
-        subscription_features = cur.fetchone()
+        subscription_row = cur.fetchone()
         
-        if subscription_features:
-            flirt_flag = subscription_features[0] or False
-            intimate_flag = subscription_features[1] or False
-            end_date = subscription_features[2]
+        if subscription_row:
+            flirt_flag = subscription_row[0] or False
+            intimate_flag = subscription_row[1] or False
+            end_date = subscription_row[2]
+            subscription_type = subscription_row[3]
+            is_active = subscription_row[4]
             
-            # Проверяем, что подписка не истекла
             now = datetime.now(timezone.utc) if end_date and end_date.tzinfo else datetime.now()
             if end_date and end_date > now:
                 result['flirt'] = flirt_flag
@@ -338,32 +342,27 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
                 result['has_subscription'] = True
                 result['subscription_end'] = end_date.isoformat()
             else:
-                # Если тариф истек - отключаем флаги в БД и возвращаем False
                 result['flirt'] = False
                 result['intimate'] = False
+                is_active = False
                 if flirt_flag or intimate_flag:
                     cur.execute(
                         "UPDATE t_p77610913_ai_dating_bot.subscriptions SET flirt = FALSE, intimate = FALSE, is_active = FALSE WHERE user_id = %s",
                         (user_id,)
                     )
                     conn.commit()
+            
+            if is_active:
+                result['subscription_type'] = subscription_type
         
+        # Single purchases query with expires_at (was executed twice before)
         cur.execute(
-            "SELECT subscription_type FROM t_p77610913_ai_dating_bot.subscriptions WHERE user_id = %s AND is_active = TRUE ORDER BY end_date DESC LIMIT 1",
-            (user_id,)
-        )
-        subscription = cur.fetchone()
-        
-        if subscription:
-            result['subscription_type'] = subscription[0]
-        
-        cur.execute(
-            "SELECT purchase_type, girl_id FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP", 
+            "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
             (user_id,)
         )
         purchases = cur.fetchall()
         
-        for purchase_type, girl_id in purchases:
+        for purchase_type, girl_id, _ in purchases:
             if purchase_type == 'all_girls':
                 result['has_all_girls'] = True
             elif purchase_type == 'one_girl' and girl_id and girl_id not in result['purchased_girls']:
@@ -399,26 +398,17 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             result['total_messages'] = 0
             result['limit_reset_time'] = None
         
-        cur.execute(
-            "SELECT purchase_type, girl_id, expires_at FROM t_p77610913_ai_dating_bot.purchases WHERE user_id = %s AND expires_at > CURRENT_TIMESTAMP",
-            (user_id,)
-        )
-        active_purchases = cur.fetchall()
-        has_active_purchase = len(active_purchases) > 0
+        # Reuse purchases result (was a duplicate query)
+        has_active_purchase = len(purchases) > 0
         
-        print(f'DEBUG CHECK_SUB: user={user_id}, active_purchases={active_purchases}, count={len(active_purchases)}')
-        
-        if active_purchases:
-            result['purchase_type'] = active_purchases[0][0]
-            result['purchase_expires'] = active_purchases[0][2].isoformat()
+        if purchases:
+            result['purchase_type'] = purchases[0][0]
+            result['purchase_expires'] = purchases[0][2].isoformat()
             
-            print(f'DEBUG CHECK_SUB: Activating {result["purchase_type"]}, setting intimate=True')
-            
-            # Активируем режимы для разовых покупок
             if result['purchase_type'] == 'all_girls':
-                result['intimate'] = True  # Все девушки на 24 часа = доступ к Интиму
+                result['intimate'] = True
             elif result['purchase_type'] == 'one_girl':
-                result['intimate'] = True  # Одна девушка на 24 часа = доступ к Интиму
+                result['intimate'] = True
         
         if result['intimate'] or has_active_purchase:
             result['message_limit'] = None
@@ -430,13 +420,15 @@ def handle_check_subscription(params: Dict[str, str]) -> Dict[str, Any]:
             result['message_limit'] = 20
             result['can_send_message'] = result['total_messages'] < 20
         
-        print(f'DEBUG CHECK_SUB: Final result = {result}')
-        
         cur.close()
-        conn.close()
-    except Exception as e:
-        print(f'DEBUG CHECK_SUB ERROR: {str(e)}')
-        pass
+        if close_conn:
+            conn.close()
+    except Exception:
+        if close_conn and conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
     
     return success_response(result)
 
