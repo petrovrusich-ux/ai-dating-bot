@@ -603,29 +603,47 @@ def handle_get_active_chats(params: Dict[str, str]) -> Dict[str, Any]:
         return error_response(500, str(e))
 
 def handle_get_full_data(params: Dict[str, str]) -> Dict[str, Any]:
-    '''Объединённый запрос: subscription + stats + active_chats одним запросом'''
+    '''Combined query: subscription + stats + active_chats with single DB connection'''
     user_id = params.get('user_id')
     
     if not user_id:
         return error_response(400, 'Missing user_id')
     
-    # Получаем subscription
-    subscription_response = handle_check_subscription(params)
-    subscription_body = json.loads(subscription_response['body'])
-    
-    # Получаем stats
-    stats_response = handle_get_stats(params)
-    stats_body = json.loads(stats_response['body'])
-    
-    # Получаем active_chats
-    chats_response = handle_get_active_chats(params)
-    chats_body = json.loads(chats_response['body'])
-    
-    # Объединяем результат
-    result = {
-        **subscription_body,
-        'stats': stats_body.get('stats', []),
-        'active_chats': chats_body.get('active_chats', [])
-    }
-    
-    return success_response(result)
+    try:
+        conn = get_db_connection()
+        
+        # Get subscription (reuse connection)
+        subscription_response = handle_check_subscription(params, conn=conn)
+        subscription_body = json.loads(subscription_response['body'])
+        
+        cur = conn.cursor()
+        
+        # Single query for both stats and active_chats (same table)
+        girl_id = params.get('girl_id')
+        cur.execute(
+            "SELECT user_id, girl_id, total_messages, relationship_level, last_interaction FROM t_p77610913_ai_dating_bot.user_girl_stats WHERE user_id = %s ORDER BY last_interaction DESC",
+            (user_id,)
+        )
+        rows = cur.fetchall()
+        
+        all_stats = [{'user_id': row[0], 'girl_id': row[1], 'total_messages': row[2], 'relationship_level': row[3], 'last_interaction': row[4].isoformat() if row[4] else None} for row in rows]
+        active_chats = [{'girl_id': row[1], 'total_messages': row[2], 'relationship_level': row[3], 'last_interaction': row[4].isoformat() if row[4] else None} for row in rows]
+        
+        # If girl_id specified, filter stats
+        if girl_id:
+            stats_result = next((s for s in all_stats if s['girl_id'] == girl_id), {'user_id': user_id, 'girl_id': girl_id, 'total_messages': 0, 'relationship_level': 0, 'last_interaction': None})
+        else:
+            stats_result = all_stats
+        
+        cur.close()
+        conn.close()
+        
+        result = {
+            **subscription_body,
+            'stats': stats_result,
+            'active_chats': active_chats
+        }
+        
+        return success_response(result)
+    except Exception as e:
+        return error_response(500, str(e))
